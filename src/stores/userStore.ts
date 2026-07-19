@@ -8,12 +8,12 @@ interface AuthState {
     
 
 
-    setUserId: (id: string) => void;
+    setUserId: (id: string | null) => void;
     setUserName: (name: string) => void;
 }
 
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useUserStore = create<AuthState>((set, get) => ({
 
 
     userId: null,
