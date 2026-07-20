@@ -4,15 +4,16 @@ import { StyleSheet } from "react-native"
 
 
 interface ButtonProps {
-    text?: string
-    onPress: () => void
+    text?: string,
+    onPress: () => void,
+    children?: React.ReactNode
 }
 
-export default function Button({ text, onPress }: ButtonProps) {
+export default function HollowButton({ text, onPress, children }: ButtonProps) {
     return (
         <TouchableOpacity onPress={onPress} style={styles.button}>
             <Text style={styles.text}>
-                { text }
+                { children ?? text }
             </Text>
         </TouchableOpacity>
     )
@@ -29,8 +30,8 @@ const styles =  StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderRadius: 8,
-        marginTop: 7,
-        backgroundColor: colors.primary,
+        marginTop: 20,
+        backgroundColor: colors.background,
     },
 
     text: {
