@@ -1,45 +1,20 @@
-import { Text } from 'react-native'
-import { View } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useUserStore } from '@/stores/userStore'
 import { useEffect } from 'react'
 
-import { useQuery } from '@tanstack/react-query'
-import { supabaseClient } from '@/configs/supabaseClient'
-
-import fetchProfile from '@/utils/fetchProfile'
-
-export default function HomeScreen() {
-    const router = useRouter();
-    const userId = useUserStore((state) => state.userId);
-
-    useUserStore
-
-    /* pause for testing
-    useEffect(() => {
-        if (!userId) {
-            router.replace('/Auth')
-        }
-    }, [userId])
-
-    */
-
-
-
-    
-  
+export default function TestCases() {
+    const router = useRouter()
     useEffect(() => {
         const sampleMCQ = JSON.stringify([
             {
                 question: 'What is the powerhouse of the cell?',
                 options: ['A) Nucleus', 'B) Mitochondria', 'C) Ribosome', 'D) Golgi apparatus'],
-                answer: 1,
+                answer: 'B',
                 explanation: 'Mitochondria produce ATP through cellular respiration.',
             },
             {
                 question: 'Which gas do plants absorb during photosynthesis?',
                 options: ['A) Oxygen', 'B) Nitrogen', 'C) Carbon dioxide', 'D) Hydrogen'],
-                answer: 2,
+                answer: 'C',
                 explanation: 'Plants use CO₂ and sunlight to produce glucose.',
             },
             {
@@ -50,7 +25,7 @@ export default function HomeScreen() {
                     'C) Objects in motion stay in motion unless acted upon',
                     'D) Energy cannot be created',
                 ],
-                answer: 2,
+                answer: 'C',
                 explanation: 'Also known as the law of inertia.',
             },
         ])
@@ -59,21 +34,5 @@ export default function HomeScreen() {
             params: { type: 'mcq', content: sampleMCQ },
         })
     }, [])
-
-    
-   
-
-
-
-    const { data, error } = useQuery({
-        queryKey: [userId],
-        queryFn: () => fetchProfile(userId!),
-        enabled: !!userId,
-    });
-
-    return (
-        <View>
-            <Text>Home</Text>
-        </View>
-    )
 }
+    

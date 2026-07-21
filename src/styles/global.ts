@@ -29,7 +29,20 @@ export const globalStyles = StyleSheet.create({
 
   errorText : {
     color: "rgb(236, 60, 60)"
-  }
+  },
+
+  text: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+
+
+  header: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: 'black',
+  },
 
 
 

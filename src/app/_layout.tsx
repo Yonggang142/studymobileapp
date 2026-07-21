@@ -12,9 +12,8 @@ export default function RootLayout() {
                     title: 'Longitude',
                 }} 
             >
-
                 <Stack.Screen name='(tabs)'/>
-
+                <Stack.Screen name='Results' options={{ headerShown: true, title: 'Results' }}/>
             </Stack>
         </QueryClientProvider>
 

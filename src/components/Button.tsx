@@ -6,14 +6,18 @@ import { StyleSheet } from "react-native"
 interface ButtonProps {
     text?: string
     onPress: () => void
+    children?: React.ReactNode
+    width?: number
 }
 
-export default function Button({ text, onPress }: ButtonProps) {
+export default function Button({ text, onPress, children, width }: ButtonProps) {
     return (
-        <TouchableOpacity onPress={onPress} style={styles.button}>
-            <Text style={styles.text}>
-                { text }
-            </Text>
+        <TouchableOpacity onPress={onPress} style={[styles.button, width !== undefined && { width }]}>
+            {children ? (
+                children
+            ) : (
+                <Text style={styles.text}>{text}</Text>
+            )}
         </TouchableOpacity>
     )
 }
@@ -21,7 +25,6 @@ export default function Button({ text, onPress }: ButtonProps) {
 const styles =  StyleSheet.create({
 
     button: {
-        height: 50,
         width: 300,
         borderColor: colors.buttonBorders,
         paddingHorizontal: 20,
@@ -31,12 +34,16 @@ const styles =  StyleSheet.create({
         borderRadius: 8,
         marginTop: 7,
         backgroundColor: colors.primary,
+        flexDirection: "row",
+        paddingVertical: 10,
+        alignSelf: "center"
     },
 
     text: {
+        textAlign: "center",
         fontSize: 20,
         fontWeight: 'bold',
-        color: colors.textSecondary
+        color: colors.textSecondary,
     }
 
 })
