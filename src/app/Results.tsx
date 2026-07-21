@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
 import { globalStyles } from '@/styles/global'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { supabaseClient } from '@/configs/supabaseClient'
+import { useUserStore } from '@/stores/userStore'
+
 
 interface MCQ {
     question: string
@@ -30,7 +34,8 @@ interface Answers {
 export default function ResultsPage() {
 
     const router = useRouter()
-    const { type, content } = useLocalSearchParams<{ type: string; content: string }>()
+    const userId = useUserStore((state) => state.userId)
+    const { type, content, materialId } = useLocalSearchParams<{ type: string; content: string, materialId: string}>()
     const data = content ? JSON.parse(content) : null
 
     const [rightOrWrong, setRightOrWrong] = useState<(Boolean | null)[]>([])
@@ -78,12 +83,24 @@ export default function ResultsPage() {
                 }),
             })
 
-            const data = await response.json()
+            const loggingData = await response.json()
 
-            if (data?.content) {
+            if (loggingData?.content) {
+                const parsed = JSON.parse(loggingData.content)
+
+                await supabaseClient
+                    .from("materials")
+                    .update({
+                        score_table: parsed.topics,
+                        summary: parsed.summary,
+                        
+                    })
+                    .eq("user_id", userId)
+                    .eq("material_id", materialId)
+
                 router.push({
                     pathname: '/Log',
-                    params: { logSummary: data.content },
+                    params: { logSummary: loggingData.content },
                 })
             }
         } catch (err) {

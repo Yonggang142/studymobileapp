@@ -8,9 +8,14 @@ import { useRouter } from 'expo-router'
 import Button from '@/components/Button'
 
 interface Log {
-    weak_at: string[]
-    strong_at: string[]
+    topics: ConceptNScoreNReason[]
     summary: string
+}
+
+interface ConceptNScoreNReason {
+    concept: string
+    score: number
+    reason: string
 }
 
 
@@ -27,6 +32,7 @@ export default function Log() {
     const router = useRouter();
     const { logSummary } = useLocalSearchParams<{ logSummary: string }>()
     const data = logSummary ? JSON.parse(logSummary) : null
+    
 
     function handleContinue() {
         router.push('/Index')
@@ -47,11 +53,24 @@ export default function Log() {
                         <Text style={globalStyles.header}>
                             Weak concepts
                         </Text>
-                        {data.weak_at.map((concept: string, idx: number) => (
-                            <Text>
-                                Concept: {concept}
-                            </Text>
-                        ))}
+                        {data.topics.filter((ConceptNScoreNReason: ConceptNScoreNReason) => (
+                            ConceptNScoreNReason.score <= 5
+                        )).map((ConceptNScoreNReason: ConceptNScoreNReason, idx: number) => {
+                            <View key={idx}>
+
+                                <Text >
+                                    Score: {ConceptNScoreNReason.score}
+                                </Text>
+
+                                <Text >
+                                    Concept: {ConceptNScoreNReason.concept}
+                                </Text>
+
+                                <Text >
+                                    Reason for score: {ConceptNScoreNReason.reason}
+                                </Text>
+                            </View>
+                        })}
 
                     </View>
 
@@ -61,11 +80,26 @@ export default function Log() {
                         <Text style={globalStyles.header}>
                             Strong concepts
                         </Text>
-                        {data.strong_at.map((concept: string, idx: number) => (
-                            <Text>
-                                Concept: {concept}
-                            </Text>
-                        ))}
+                        {data.topics.filter((ConceptNScoreNReason: ConceptNScoreNReason) => (
+                            ConceptNScoreNReason.score > 5
+                        )).map((ConceptNScoreNReason: ConceptNScoreNReason, idx: number) => {
+                            <View key={idx}>
+                                <Text >
+                                    Score: {ConceptNScoreNReason.score}
+                                </Text>
+
+                                <Text >
+                                    Concept: {ConceptNScoreNReason.concept}
+                                </Text>
+
+                                <Text >
+                                    Reason for score: {ConceptNScoreNReason.reason}
+                                </Text>
+                            </View>
+                        })
+                        
+                        
+                        }
 
                     </View>
                     

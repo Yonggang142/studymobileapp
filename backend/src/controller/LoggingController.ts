@@ -12,20 +12,21 @@ const modelClient = new OpenAI({
 const modelName = "deepseek-v4-flash"
 const instructions = "You are an expert exam preparation assistant. Output ONLY valid JSON. No markdown, no code blocks, no extra text."
 
-const prompt = `Analyze the questions below. Identify the underlying concepts the user struggles with and excels at. Be specific — name concrete topics, not vague categories.
+const prompt = `Analyze the questions below. Identify the concepts the user got right and wrong, with a score from 0 (completely wrong) to 10 (perfect).
 
 Output JSON:
 {
-  "weak_at": ["concept 1", "concept 2"],
-  "strong_at": ["concept 1", "concept 2"],
-  "summary": "Summary of their overall performance pattern"
+  "topics": [
+    { "concept": "Newton's second law", "score": 3, "reason: ..."},
+    { "concept": "Ideal gas laws", "score": 9, "reason: ..."}
+  ],
+  "summary": "One sentence summary of their overall performance pattern"
 }
 
 Rules:
-- 1-3 items per array
+- Score 0-3: weak, 4-6: average, 7-10: strong
 - Name specific concepts (e.g. "Newton's laws" not "physics")
-- If no wrong answers, weak_at = []
-- If no correct answers, strong_at = []`
+- At least 1 topic, at most 5`
 
 export const handleLogging = async (req: Request, res: Response) => {
     try {
