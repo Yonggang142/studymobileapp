@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
 import { globalStyles } from '@/styles/global'
-import { SupabaseClient } from '@supabase/supabase-js'
 import { supabaseClient } from '@/configs/supabaseClient'
 import { useUserStore } from '@/stores/userStore'
 
@@ -35,12 +34,12 @@ export default function ResultsPage() {
 
     const router = useRouter()
     const userId = useUserStore((state) => state.userId)
-    const { type, content, materialId } = useLocalSearchParams<{ type: string; content: string, materialId: string}>()
+    const { type, content, materialId, topic } = useLocalSearchParams<{ type: string; content: string, materialId: string, topic: string}>()
     const data = content ? JSON.parse(content) : null
 
     const [rightOrWrong, setRightOrWrong] = useState<(Boolean | null)[]>([])
     const [yourResponse, setYourResponse] = useState<(number | null)[]>([])
-
+   
 
     function CheckAnswer(question: MCQ, index: number, opIndex: number) {
         if (opIndex === question.answer) {
@@ -63,6 +62,7 @@ export default function ResultsPage() {
 
 
     async function CompileData() {
+
         const WrongQuestionsArray = []
         const CorrectQuestionsArray = []
 
@@ -82,10 +82,12 @@ export default function ResultsPage() {
                     correct_questions: CorrectQuestionsArray
                 }),
             })
-
+            const cq = CorrectQuestionsArray.length
+            const wq = WrongQuestionsArray.length
+            const score = (cq/(cq + wq)) * 10 
             const loggingData = await response.json()
 
-            if (loggingData?.content) {
+            if (loggingData?.content && type != "revision") {
                 const parsed = JSON.parse(loggingData.content)
 
                 await supabaseClient
@@ -97,12 +99,13 @@ export default function ResultsPage() {
                     })
                     .eq("user_id", userId)
                     .eq("material_id", materialId)
-
-                router.push({
-                    pathname: '/Log',
-                    params: { logSummary: loggingData.content },
-                })
             }
+
+
+            router.push({
+                pathname: '/Log',
+                params: { logSummary: loggingData.content, topic: topic, score: score },
+            })
         } catch (err) {
             console.log("Error: ", err)
         }
@@ -112,7 +115,7 @@ export default function ResultsPage() {
 
     return (
         <View>
-            {type === 'mcq' ? (
+            {type === 'mcq' || type === "mcq-revision" ? (
                 <ScrollView style={{
                     flex: 9
                 }}>
@@ -182,7 +185,7 @@ export default function ResultsPage() {
                         </View>
                     ))}
                 </ScrollView>
-            ) : (
+            ) : (type == "answers") ? (
                 <ScrollView style={{
                     gap: 10
                 }}>
@@ -214,6 +217,18 @@ export default function ResultsPage() {
                     ))}
 
                 </ScrollView>
+            ) : (
+                <ScrollView style={{
+                    gap: 10
+                }}>
+
+                    <Text>
+                        Summary of common mistakes: {data}
+                    </Text>
+
+
+                </ScrollView>
+
             )}
 
 

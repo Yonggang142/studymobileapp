@@ -108,7 +108,8 @@ export default function AddMaterial() {
                 title: name,
                 id: materialId,
                 file_url: bucketPath,
-
+                folder: folder,
+                topic: tag
             })
 
         } catch (err) {
@@ -137,7 +138,7 @@ export default function AddMaterial() {
                     title: name,
                     id: materialId,
                     file_url: bucketPath,
-        
+
 
                 })
 
@@ -222,6 +223,9 @@ export default function AddMaterial() {
                     
                     <Button onPress={() => handleSubmitLogs(selectedDescp, selectedFolder)} text={"Enter"}>
 
+                    <Button text="Back" onPress={() => setIsLogging(false)}></Button>
+                    
+
                     </Button>
 
 
@@ -249,6 +253,13 @@ export default function AddMaterial() {
                         <Button width={300} text="Create a MCQ quiz" onPress={() => handleUpload("mcq")} />
                         <Button width={300} text="Provide key knowledge points" onPress={() => handleUpload("knowledge")} />
                         <Button width={300} text="Skip and Store it" onPress={() => handleLogging()} />
+                        <Button text="Back" onPress={() => {setPhotoUri(null) ; setFile(null)}}></Button>
+                        
+
+
+
+                        <Button width={300} text="Mark my quiz" onPress={() => handleUpload("answers")} />
+                        
                     </View>
 
 

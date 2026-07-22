@@ -11,6 +11,20 @@ import { Ionicons } from "@expo/vector-icons"
 import { downloadFromBucket } from "../../utils/BucketServices"
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import Button from "@/components/Button"
+
+import Log from "../Log"
+import ReviewCard from "@/components/ReviewCard"
+import { fetchMaterials } from '@/utils/fetchMaterials'
+
+
+interface ConceptNScoreNReason {
+    concept: string
+    score: number
+    reason: string
+}
+
+
 
 interface Material {
     material_id: string
@@ -19,18 +33,11 @@ interface Material {
     material_name: string
     file_path: string
     folder: string
+    score_table: ConceptNScoreNReason[]
+    summary: string
 }
 
-async function fetchMaterials(userId: string) {
-    
-    const { data } = await supabaseClient
-        .from("materials")
-        .select("material_id, title, created_at, material_name, file_path, folder")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
 
-    return data
-}
 
 export default function Materials() {
 
@@ -109,6 +116,15 @@ export default function Materials() {
                         </Text>
                     </TouchableOpacity>
 
+
+               
+                    <ReviewCard data={{topics: showMoreInfo.score_table, summary: showMoreInfo.summary}}/>
+                
+    
+                    
+                    <Button text="back" onPress={() => setShowMoreInfo(null)}/>
+                   
+
                     <TouchableOpacity onPress={(e) => {e.stopPropagation(); downloadFile(showMoreInfo.file_path, showMoreInfo.material_name)}}>
                         <Ionicons name="download" size={30}/>
                     </TouchableOpacity>
@@ -141,14 +157,25 @@ export default function Materials() {
 
             ) : (
                  <View>
-   
-                    {folderNames && folderNames.map((item: string) => (
+                    
+                    {folderNames ? (folderNames.map((item: string) => (
                         <TouchableOpacity key={item} onPress={() => {item == "" ? setFolderPopup(item) : setFolderPopup("")}}>
                             <Text>
                                 {item}
                             </Text>
                         </TouchableOpacity>
-                    ))}
+                    ))): (
+                        <View>
+
+                            <Text>
+                                Respository is empty
+                            </Text>
+                            
+                            <Button text={"Add materials"} onPress={() => router.push("/(tabs)/AddMaterials")}>
+
+                            </Button>
+                        </View>
+                    )}
 
                     {folderPopup != "" && data && data.filter((item) => item.folder == folderPopup).map((item) => (
                         <TouchableOpacity key={item.material_id} onPress={() => setShowMoreInfo(item)}>

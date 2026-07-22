@@ -11,8 +11,9 @@ import fetchProfile from '@/utils/fetchProfile'
 
 import fetchTopics from '@/utils/fetchTopicData'
 import { LineChart } from 'react-native-gifted-charts'
+import Button from '@/components/Button'
 
-
+import { fetchMaterials } from '@/utils/fetchMaterials'
 
 
 const colors = ['#4fc3f7', '#ff8a65', '#81c784', '#ba68c8', '#fff176', '#4db6ac']
@@ -21,12 +22,19 @@ export default function HomeScreen() {
     const router = useRouter();
     const userId = useUserStore((state) => state.userId);
 
-    const [topicPopup, setTopicPopup] = useState(false)
+    const [topicPopup, setTopicPopup] = useState<string | null>(null)
 
 
     const { data, error } = useQuery({
         queryKey: [userId],
         queryFn: () => fetchProfile(userId!),
+        enabled: !!userId,
+    });
+
+
+    const { data: dataMaterial, error: errorMaterial } = useQuery({
+        queryKey: [userId],
+        queryFn: () => fetchMaterials(userId!),
         enabled: !!userId,
     });
 
@@ -90,22 +98,44 @@ export default function HomeScreen() {
     const decay = 0.095
 
 
-    // open some popup to show whether u want to revise the topic (MCQ)
-    function handlePressPoint(topic : "string") {
-        // submit prompt to begin mcq based revision
 
-    }
 
-    function handleSubmit(type : string) {
+    async function handleSubmit(type : string) {
         
+        const topic = topicPopup
 
-        if (type == "revision") {
-            // go direct them to notes that satisfy all the topic same as search
-        } else if  (type == "error revision") {
-            //go and see the errors u made
         
-        } else if (type == "mcq") {
-            // generate new mcq, redirect to results.tsx
+            const prompt = dataMaterial?.filter((material) => material.topic == topic)
+                .map((material) => material.summary)
+                .join(",") ?? ""
+            
+            const response = await fetch(`${process.env.EXPO_PUBLIC_SERVER_URL}/api/revision`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json", 
+                },
+                body: JSON.stringify({
+                    summarizedMistakes: prompt,
+                    type: type
+                })
+            })
+        if (type == "mcq") {
+
+            if (data?.content) {
+
+                router.push({
+                    pathname: '/Results',
+                    params: { type: type, content: data.content, topic: topic},
+                })
+            }
+        } else {
+            if (data?.content) {
+
+                router.push({
+                    pathname: '/Results',
+                    params: { type: type, content: data.content},
+                })
+            }
         }
     }
 
@@ -142,7 +172,7 @@ export default function HomeScreen() {
                     if (obj[day] !== undefined) {
                         newArr.push({ value: prev * decay, hideDataPoint: true, })
                     } else {
-                        newArr.push({ value: obj[day], onPress: () => handlePressPoint(topic), dataPointsRadius: 20})
+                        newArr.push({ value: obj[day], onPress: () => setTopicPopup(topic), dataPointsRadius: 20})
                     }
 
                     prev = obj[day]
@@ -179,7 +209,18 @@ export default function HomeScreen() {
 
 
 
+            {topicPopup && (
+                <View style={{
+                    position: 'absolute',
 
+                }}>
+                    <Button text='Revise MCQ' onPress={() => handleSubmit("mcq")}></Button>
+                    <Button text='error revision (no points)' onPress={() => handleSubmit("error_revision")}></Button>
+                    
+                </View>
+
+
+            )}
         </View>
     )
 }

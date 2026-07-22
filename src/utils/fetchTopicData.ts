@@ -3,7 +3,7 @@ import { supabaseClient } from "@/configs/supabaseClient";
 export default async function fetchTopics(userId: string | null) {
 
     const { data, error } = await supabaseClient
-    .from("profiles")
+    .from("topic_scores")
     .select("*")
     .eq("user_id", userId)
     
