@@ -4,8 +4,11 @@ import { useState } from "react"
 import { TextInput, Touchable, TouchableOpacity, Text } from "react-native"
 import Button from "./Button"
 import { View } from "react-native"
-export default function TagInput({ allTags, onSubmit }: { allTags: string[]; onSubmit: (newTag: string | null) => void }) {
-    const [query, setQuery] = useState('')
+export default function TagInput({ allTags, query, setQuery }: { 
+    allTags: string[]; 
+    query: string; 
+    setQuery: (value: string) => void;
+}) {
     const [isDropdown, setIsDropdown] = useState(false)
 
 
@@ -32,7 +35,7 @@ export default function TagInput({ allTags, onSubmit }: { allTags: string[]; onS
                 }}>
                     {
                         filtered.map((value: string, index: number) => (
-                            <TouchableOpacity onPress={() => { setQuery(value); onSubmit(value); setIsDropdown(false) }}>
+                            <TouchableOpacity onPress={() => { setQuery(value); setIsDropdown(false) }}>
                                 <Text>
                                     {value}
                                 </Text>
@@ -44,9 +47,6 @@ export default function TagInput({ allTags, onSubmit }: { allTags: string[]; onS
             )}
 
 
-            <Button onPress={() => onSubmit(query || null)} text={"Enter"}>
-
-            </Button>
 
         </>
 

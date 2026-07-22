@@ -18,6 +18,8 @@ import { useQuery } from '@tanstack/react-query'
 
 import fetchProfile from "@/utils/fetchProfile"
 
+import fetchAllFolders from "@/utils/fetchAllFolders"
+
 export default function AddMaterial() {
     
 
@@ -27,6 +29,11 @@ export default function AddMaterial() {
     const [file, setFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null)
 
     const [isLogging, setIsLogging] = useState(false)
+    
+    
+    
+    const [selectedDescp, setSelectedDescp] = useState("")
+    const [selectedFolder, setSelectedFolder] = useState("")
 
 
     const { data, error } = useQuery({
@@ -34,6 +41,14 @@ export default function AddMaterial() {
         queryFn: () => fetchProfile(userId!),
         enabled: !!userId,
     });
+
+
+    const { data: allFolders, error: error2 } = useQuery({
+        queryKey: [userId],
+        queryFn: () => fetchAllFolders(userId!),
+        enabled: !!userId,
+    });
+
 
 
     const pickImage = async () => {
@@ -70,18 +85,32 @@ export default function AddMaterial() {
         setIsLogging(true)
     }
 
-    async function handleSubmitLogs(newTag: string | null) {
+    async function handleSubmitLogs(tag: string, folder: string) {
         try {
-            if (newTag) {
+            await supabaseClient
+                .from("topic_scores")
+                .insert([{ user_id: userId, topic: tag, score: null }])
+            
+            
+            const name = file?.name || 'image.jpg'
+            const uri = file?.uri || photoUri
 
-                await supabaseClient
-                    .from("topic_scores")
-                    .insert([
-                        { user_id: userId, topic: newTag, score: null }
-                    ])
-            }
+            if (!uri || !userId) return
+            
+            const materialId = crypto.randomUUID()
+            const bucketPath = await uploadToBucket(userId, materialId, uri)
+            
+            
+            await supabaseClient
+            .from("materials")
+            .insert({
+                user_id: userId,
+                title: name,
+                id: materialId,
+                file_url: bucketPath,
 
-            handleUpload("log")
+            })
+
         } catch (err) {
             console.log("failed to submit tags")
         } finally {
@@ -108,12 +137,9 @@ export default function AddMaterial() {
                     title: name,
                     id: materialId,
                     file_url: bucketPath,
+        
+
                 })
-
-            if (type == "log") {
-                return
-            }
-
 
 
             const formData = new FormData()
@@ -190,8 +216,15 @@ export default function AddMaterial() {
                         Give precise, descriptions to your stuff
                         Or match previous descriptions
                     </Text>
-                    <TagInput allTags={data?.topic_tags ?? []} onSubmit={handleSubmitLogs}/>
+                    <TagInput allTags={data?.topic_tags ?? []} query={selectedDescp} setQuery = {setSelectedDescp}/>
                     
+                    <TagInput allTags={allFolders ?? []} query={selectedFolder} setQuery= {setSelectedFolder}/>
+                    
+                    <Button onPress={() => handleSubmitLogs(selectedDescp, selectedFolder)} text={"Enter"}>
+
+                    </Button>
+
+
                 </View>
             ) : ((photoUri || file) ? (
 
