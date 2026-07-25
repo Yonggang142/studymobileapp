@@ -3,4 +3,4 @@ import { handleRevision } from "../controller/RevisionController"
 
 export const revisionRouter = Router()
 
-revisionRouter.post("/revision", handleRevision)
+revisionRouter.post("/", handleRevision)

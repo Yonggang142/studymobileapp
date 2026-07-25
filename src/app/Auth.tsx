@@ -1,4 +1,4 @@
-import { View, Image, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native'
+import { View, Image, StyleSheet, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useUserStore } from '@/stores/userStore'
 import { colors } from '@/styles/global'
 import { globalStyles } from '@/styles/global'
@@ -17,6 +17,7 @@ import HollowButton from '@/components/HollowButton'
 
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import fetchProfile from '@/utils/fetchProfile'
 
 import { useRef } from 'react'
 
@@ -27,6 +28,7 @@ export default function AuthPage() {
     const [password, setPassword] = useState("")
     const [isSignIn, setIsSignIn] = useState(true)
     const [errorMsg, setErrorMsg] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
 
     const errorRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -35,7 +37,8 @@ export default function AuthPage() {
 
 
     async function OAuthSignIn(provider : Provider) {
-        
+        setIsLoading(true)
+        try {
         const redirectUrl = Linking.createURL('/auth/callback');
 
         const { data, error } = await supabaseClient.auth.signInWithOAuth({ 
@@ -77,9 +80,16 @@ export default function AuthPage() {
                 }
             }
         }
+        } catch (err) {
+            setErrorMsg("OAuth sign in failed")
+            console.error(err)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     async function handleSignUp() {
+        setIsLoading(true)
         try {
             const { data, error } = await supabaseClient.auth.signUp({
                 email: email,
@@ -93,6 +103,7 @@ export default function AuthPage() {
             
             if (data.session?.user) {
                 setUserId(data.session.user.id)
+                await fetchProfile(data.session.user.id) 
                 router.replace('/Index')
             }
             
@@ -109,7 +120,7 @@ export default function AuthPage() {
             
             console.log("error: ", err)
         } finally {
-
+            setIsLoading(false)
             setPassword("")
             setEmail("")
         }
@@ -118,7 +129,7 @@ export default function AuthPage() {
 
 
     async function handleSignIn() {
-
+        setIsLoading(true)
         try {
 
             const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -141,12 +152,15 @@ export default function AuthPage() {
             }
             
             setUserId(data.session?.user?.id || null)
+
+            await fetchProfile(data.session.user.id) 
             router.replace('/Index')
 
         } catch (err) {
             setErrorMsg("Account does not exist")
             console.log("error: ", err)
         } finally {
+            setIsLoading(false)
             setPassword("")
             setEmail("")
         }
@@ -156,6 +170,11 @@ export default function AuthPage() {
 
     return (
         <View style={styles.container}>
+            {isLoading && (
+                <View style={{ position: 'absolute', zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                    <ActivityIndicator size="large" color={colors.text} />
+                </View>
+            )}
             {isSignIn ? (
                 <View style={styles.signInFrame}>
                     <Image style={styles.authImage} source={CompanyLogo} />
@@ -163,7 +182,7 @@ export default function AuthPage() {
 
 
                     
-                    <HollowButton onPress={() => OAuthSignIn('google')}>
+                    <HollowButton onPress={() => OAuthSignIn('google')} disabled={isLoading}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <Image
                                 source={{ uri: 'https://developers.google.com/static/identity/images/g-logo.png' }}
@@ -207,7 +226,7 @@ export default function AuthPage() {
                         value={password}
                     />
 
-                    <Button text='Login' onPress={handleSignIn} />
+                    <Button text='Login' onPress={handleSignIn} disabled={isLoading} />
 
                     <View style={styles.textFrame}>
                         <Text style={styles.text}>
@@ -237,7 +256,7 @@ export default function AuthPage() {
                     <Image style={styles.authImage} source={CompanyLogo} />
                     <Text style={styles.authText}>ProjectACSA</Text>
                    
-                    <HollowButton onPress={() => OAuthSignIn('google')}>
+                    <HollowButton onPress={() => OAuthSignIn('google')} disabled={isLoading}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <Image
                                 source={{ uri: 'https://developers.google.com/static/identity/images/g-logo.png' }}
@@ -282,7 +301,7 @@ export default function AuthPage() {
                         value={password}
                     />
 
-                    <Button text='Sign Up' onPress={handleSignUp} />
+                    <Button text='Sign Up' onPress={handleSignUp} disabled={isLoading} />
 
                     <View style={styles.textFrame}>
                         <Text>

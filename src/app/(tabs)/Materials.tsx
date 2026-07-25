@@ -1,6 +1,6 @@
-import { View, Text, TouchableOpacity} from "react-native"
+import { View, Text, TouchableOpacity, ActivityIndicator} from "react-native"
 import { useUserStore } from "@/stores/userStore"
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabaseClient } from "@/configs/supabaseClient"
 import { globalStyles } from "@/styles/global"
 import { useMemo, useState } from "react"
@@ -47,29 +47,34 @@ export default function Materials() {
     const userId = useUserStore((state) => state.userId)
 
     const [showMoreInfo, setShowMoreInfo] = useState<Material | null>(null)
+    const [isLoading, setIsLoading] = useState(false)
    
-
+    const [warningPopup, setWarningPopup] = useState(false)
+    const queryClient = useQueryClient()
     const { data, error } = useQuery({
         queryKey: [userId],
         queryFn: () => fetchMaterials(userId!),
         enabled: !!userId,
     });
 
+    // console.log(data)
 
     async function downloadFile(path: string, filename: string) {
         if (!path) return
-
+        setIsLoading(true)
         try {
-            const blob = await downloadFromBucket(path)
-            if (!blob) return
+            const arrayBuffer = await downloadFromBucket(path)
+            if (!arrayBuffer) return
+
             const file = new File(Paths.document, filename);
-            const arrayBuffer = await blob.arrayBuffer();
             const bytes = new Uint8Array(arrayBuffer);  
             await file.write(bytes);
             await Sharing.shareAsync(file.uri);
 
         } catch (err) {
             console.error('Download failed:', err)
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -77,19 +82,28 @@ export default function Materials() {
         data ? [...new Set(data.map(item => item.folder))] : []
     , [data])
 
-
+   
     async function deleteFile(materialId: string) {
+        
+        setIsLoading(true)
+        try {
         const { error } = await supabaseClient
             .from("materials")
             .delete()
             .eq("user_id", userId)
-            .eq("id", materialId)
+            .eq("material_id", materialId)
 
         if (error) console.error(error)
+        else queryClient.invalidateQueries({ queryKey: ["materials", userId] })
+        } finally {
+            setIsLoading(false)
+        }
     }
 
 
     async function moveFile(materialId: string, newFolder: string) {
+        setIsLoading(true)
+        try {
         const { error } = await supabaseClient
             .from("materials")
             .update({folder: newFolder})
@@ -97,16 +111,45 @@ export default function Materials() {
             .eq("id", materialId)
 
         if (error) console.error(error)
+        } finally {
+            setIsLoading(false)
+        }
 
     }
 
 
 
-
-
-    
     return (
-        <>
+        <>  
+
+     
+
+            {warningPopup && showMoreInfo && (
+                <View style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    zIndex: 20,
+                }}>
+                    <Text>
+                        Are u sure u wannt deleted
+                    </Text>
+
+                    <Button text="yessir" onPress={() => {deleteFile(showMoreInfo.material_id); setWarningPopup(false); setShowMoreInfo(null)}}/>
+
+                     <Button text="back" onPress={() => setWarningPopup(false)}/>
+
+                </View>
+
+            )}
+
+            {isLoading && (
+                <View style={{ position: 'absolute', zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                    <ActivityIndicator size="large" />
+                </View>
+            )}
 
             {showMoreInfo ? (
                 <View>
@@ -125,24 +168,26 @@ export default function Materials() {
                     <Button text="back" onPress={() => setShowMoreInfo(null)}/>
                    
 
-                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); downloadFile(showMoreInfo.file_path, showMoreInfo.material_name)}}>
+                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); downloadFile(showMoreInfo.file_path, showMoreInfo.material_name)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
                         <Ionicons name="download" size={30}/>
                     </TouchableOpacity>
 
 
-                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); deleteFile(showMoreInfo.material_id)}}>
+                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); setWarningPopup(true)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
                         <Ionicons name="trash" size={30}/>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); setSelectedMaterial(showMoreInfo.material_id)}}>
+                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); setSelectedMaterial(showMoreInfo.material_id)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
                         <Ionicons name="move" size={30}/>
                     </TouchableOpacity>
+
+                    
 
 
                      {selectedMaterial && (
                         <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#1a1a2e' }}>
                             <Text style={{ color: '#fff', marginBottom: 10 }}>Move to folder:</Text>
-                            {folderNames.filter(f => f !== folderPopup).map(folder => (
+                            {folderNames?.filter(f => f !== folderPopup).map(folder => (
                                 <TouchableOpacity key={folder} onPress={() => { moveFile(selectedMaterial, folder); setSelectedMaterial(null) }}>
                                     <Text>{folder}</Text>
                                 </TouchableOpacity>
@@ -159,7 +204,7 @@ export default function Materials() {
                  <View>
                     
                     {folderNames ? (folderNames.map((item: string) => (
-                        <TouchableOpacity key={item} onPress={() => {item == "" ? setFolderPopup(item) : setFolderPopup("")}}>
+                        <TouchableOpacity key={item} onPress={() => setFolderPopup(item)}>
                             <Text>
                                 {item}
                             </Text>
@@ -170,7 +215,9 @@ export default function Materials() {
                             <Text>
                                 Respository is empty
                             </Text>
-                            
+
+
+                           
                             <Button text={"Add materials"} onPress={() => router.push("/(tabs)/AddMaterials")}>
 
                             </Button>
@@ -178,7 +225,7 @@ export default function Materials() {
                     )}
 
                     {folderPopup != "" && data && data.filter((item) => item.folder == folderPopup).map((item) => (
-                        <TouchableOpacity key={item.material_id} onPress={() => setShowMoreInfo(item)}>
+                        <TouchableOpacity style={{marginLeft: 20}} key={item.material_id} onPress={() => setShowMoreInfo(item)}>
                             <Text style={globalStyles.header}>
                                 {item.title}
                             </Text>
@@ -201,7 +248,13 @@ export default function Materials() {
 
                     ))}
 
-                   
+                    <Button text="Add material" onPress={() => { 
+                        router.push({
+                            pathname: '/AddMaterials',
+
+                        })
+                    }}/>
+                           
                 </View>
             )}
         </>

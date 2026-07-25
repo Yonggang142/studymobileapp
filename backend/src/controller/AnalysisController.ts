@@ -2,14 +2,14 @@
 import type { Request, Response } from 'express'
 import OpenAI from "openai"
 import fs from 'fs'
+import { PDFParse } from 'pdf-parse'
 
 const modelClient = new OpenAI({
-    baseURL: "https://api.deepseek.com", 
-    apiKey: process.env.DEEPSEEK_API_KEY, 
+    apiKey: process.env.OPENAI_API_KEY,
 });
 
 const typeToPrompt: Record<string, string> = {
-    answer: `Look at the questions in this image. Output ONLY the answers in clear numerical order.
+    answers: `Look at the questions in this image. Output ONLY the answers in clear numerical order.
 
 Output as a JSON array:
 [
@@ -39,50 +39,127 @@ Generate 5 questions. Cover key concepts, similar in vibe to the file provided, 
 
     knowledge: `Summarize the key knowledge points from this content. 
 
+Output as a JSON array:
+[
+  {
+    "title": "Topic 1",
+    "points": ["Key point 1", "Key point 2", ...]
+  },
+  {
+    "title": "Topic 2",
+    "points": ["Key point 1", "Key point 2", ...]
+  }
+]
+
+Include 2-4 topics. Each topic should have 2-3 concise, well-explained points. Focus on concepts that would appear in an exam, not filler.`,
+
+    marking: `You are grading a student's work against an answer key.
+
+1. Compare each student answer with the corresponding answer key answer.
+2. If the student's answer matches the correct answer exactly (or is clearly the same choice), mark isCorrect: true. DO NOT mark matching answers as wrong.
+3. Give a score (e.g. 3/5) and brief feedback.
+4. Identify which topics the student is weak in.
+
 Output as a JSON object:
 {
-  "title": "Brief topic title",
-  "points": [
-    "Key point 1 with explanation",
-    "Key point 2 with explanation",
-    ...
-  ]
-}
+  "score": "3/5",
+  "Non Attempted": 0,
+  "results": [
+    {
+      "question": "...",
+      "studentAnswer": "...",
+      "correctAnswer": "...",
+      "isCorrect": true,
+      "explanation": "..."
+    }
+  ],
+  "feedback": "Overall feedback here..."
+}`,
+ markingNoAnswer: `You are grading a student's work. There is NO answer key provided — you must determine the correct answers yourself from the question content.
 
-Include 2 - 3 concise, well-explained points. Focus on concepts that would appear in an exam, not filler.`
+    1. For each question, figure out the correct answer.
+    2. Compare the student's answer to the correct answer. If they match, mark isCorrect: true.
+    3. Give a score (e.g. 3/5) and brief feedback.
+    4. Identify which topics the student is weak in.
+
+    Output as a JSON object:
+    {
+    "score": "3/5",
+    "Non Attempted": 0,
+    "results": [
+        {
+        "question": "...",
+        "studentAnswer": "...",
+        "correctAnswer": "...",
+        "isCorrect": true,
+        "explanation": "..."
+        }
+    ],
+    "feedback": "Overall feedback here..."
+    }`
 }
 
 const instructions = "You are an expert exam preparation assistant. Analyze the provided image carefully. Output ONLY valid JSON matching the requested format exactly. Do not include markdown formatting, code blocks, or any text outside the JSON."
-const modelName = "deepseek-v4-flash"
+const modelName = "gpt-4o-mini"  // supports image_url vision
 
 export const handleAnalysis = async (req: Request, res: Response) => {
     try {
+
+        
         const { type } = req.body
-        const uploadedFile = req.file
+        
         const prompt = typeToPrompt[type]
   
-        if (uploadedFile) {
-            const base64 = fs.readFileSync(uploadedFile.path, { encoding: 'base64' })
-            const response = await modelClient.chat.completions.create({
-                model: modelName,
-                messages: [
-                    { role: 'system', content: instructions },
-                    {
-                        role: 'user',
-                        content: [
-                            { type: 'text', text: prompt },
-                            { type: 'image_url', image_url: { url: `data:${uploadedFile.mimetype};base64,${base64}` } }
-                        ]
-                    }
-                ],
-                response_format: { type: 'json_object' }
-            })
 
-            res.json({ content: response.choices[0].message.content })
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+        const file = files?.['file']?.[0]
+        const answerFile = files?.['answerFile']?.[0]
+
+        if (!file) {
+            res.status(400).json({ error: "No file uploaded" })
             return
         }
 
-        res.status(400).json({ error: "No file uploaded" })
+        const buildFileContent = async (f: Express.Multer.File, label?: string): Promise<OpenAI.Chat.Completions.ChatCompletionContentPart[]> => {
+            const isPdf = f.mimetype === 'application/pdf'
+            if (isPdf) {
+                const pdfBuffer = fs.readFileSync(f.path)
+                const parser = new PDFParse({ data: pdfBuffer })
+                const { text: pdfText } = await parser.getText()
+                const fileLabel = label ? `[${label}]\n\n` : 'File content:\n\n'
+                return [{ type: 'text', text: fileLabel + pdfText }]
+            } else {
+                const base64 = fs.readFileSync(f.path, { encoding: 'base64' })
+                const fileLabel = label ? `[${label}]` : ''
+                return[{ type: 'image_url', image_url: { url: `data:${f.mimetype};base64,${base64}` } }]
+             
+            }
+        }
+
+        const userContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+            { type: 'text', text: prompt }
+        ]
+
+        if (type === 'marking') {
+            if (!answerFile) {
+                res.status(400).json({ error: "Answer key file required for marking" })
+                return
+            }
+            userContent.push(...(await buildFileContent(file, 'STUDENT WORK')))
+            userContent.push(...(await buildFileContent(answerFile, 'ANSWER KEY')))
+        } else {
+            userContent.push(...(await buildFileContent(file)))
+        }
+
+        const response = await modelClient.chat.completions.create({
+            model: modelName,
+            messages: [
+                { role: 'system', content: instructions },
+                { role: 'user', content: userContent }
+            ],
+        })
+
+        res.json({ content: response.choices[0].message.content })
 
 
 

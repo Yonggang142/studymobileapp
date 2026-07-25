@@ -8,11 +8,12 @@ interface ButtonProps {
     onPress: () => void
     children?: React.ReactNode
     width?: number
+    disabled?: boolean
 }
 
-export default function Button({ text, onPress, children, width }: ButtonProps) {
+export default function Button({ text, onPress, children, width, disabled }: ButtonProps) {
     return (
-        <TouchableOpacity onPress={onPress} style={[styles.button, width !== undefined && { width }]}>
+        <TouchableOpacity onPress={onPress} disabled={disabled} style={[styles.button, width !== undefined && { width }, disabled && { opacity: 0.5 }]}>
             {children ? (
                 children
             ) : (
@@ -26,7 +27,7 @@ const styles =  StyleSheet.create({
 
     button: {
         width: 300,
-        borderColor: colors.buttonBorders,
+        borderColor: colors.Borders,
         paddingHorizontal: 20,
         justifyContent: 'center',
         alignItems: 'center',

@@ -1,20 +1,21 @@
 
 
 const BUCKET = "materials";
-import { gzipSync, gunzipSync } from "zlib";
 
 import { supabaseClient } from "@/configs/supabaseClient";
-import { blob } from "stream/consumers";
 
 export async function uploadToBucket(userId: string, materialId: string, fileUri: string) {
   
-  const blob = await fetch(fileUri).then(r => r.blob())
+  console.log("uploadToBucket — fetching:", fileUri)
+  const response = await fetch(fileUri)
+  const arrayBuffer = await response.arrayBuffer()
+  
   const path = `${userId}/${materialId}`
   
-
+  // Pass ArrayBuffer directly — Supabase storage accepts it
   const { error } = await supabaseClient.storage
     .from(BUCKET)
-    .upload(path, blob, { contentType: blob.type, upsert: true });
+    .upload(path, arrayBuffer, { contentType: response.headers.get("content-type") || "application/octet-stream", upsert: true });
 
   if (error) {
     console.error("Bucket upload failed:", error);
@@ -29,14 +30,21 @@ export async function uploadToBucket(userId: string, materialId: string, fileUri
 export async function downloadFromBucket(bucketFilePath: string) {
   if (!bucketFilePath) return null;
 
-  const { data, error } = await supabaseClient.storage
+  // Use signed URL + fetch to avoid Expo's broken response.blob()
+  const { data: signedData, error: signedError } = await supabaseClient.storage
     .from(BUCKET)
-    .download(bucketFilePath);
+    .createSignedUrl(bucketFilePath, 300);
 
-  if (error) {
-    console.error("Bucket download failed:", error);
+  if (signedError || !signedData?.signedUrl) {
+    console.error("Signed URL failed:", signedError);
     return null;
   }
-  
-  return data
+
+  const response = await fetch(signedData.signedUrl);
+  if (!response.ok) {
+    console.error("Download fetch failed:", response.status);
+    return null;
+  }
+
+  return response.arrayBuffer();
 }

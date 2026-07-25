@@ -4,4 +4,4 @@ import { handleLogging } from "../controller/LoggingController"
 
 export const loggingRouter = Router()
 
-loggingRouter.post("/analysis", handleLogging)
+loggingRouter.post("/", handleLogging)

@@ -1,7 +1,7 @@
 import Button from '@/components/Button'
 import { useLocalSearchParams, VectorIcon } from 'expo-router'
 import { useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
 import { globalStyles } from '@/styles/global'
 import { supabaseClient } from '@/configs/supabaseClient'
@@ -34,11 +34,12 @@ export default function ResultsPage() {
 
     const router = useRouter()
     const userId = useUserStore((state) => state.userId)
-    const { type, content, materialId, topic } = useLocalSearchParams<{ type: string; content: string, materialId: string, topic: string}>()
+    const { type, content, materialId, topic, materialName, bucketPath, sourceUri } = useLocalSearchParams<{ type: string; content: string, materialId: string, topic: string, materialName: string, bucketPath: string, sourceUri: string }>()
     const data = content ? JSON.parse(content) : null
 
     const [rightOrWrong, setRightOrWrong] = useState<(Boolean | null)[]>([])
     const [yourResponse, setYourResponse] = useState<(number | null)[]>([])
+    const [isCompiling, setIsCompiling] = useState(false)
    
 
     function CheckAnswer(question: MCQ, index: number, opIndex: number) {
@@ -62,6 +63,8 @@ export default function ResultsPage() {
 
 
     async function CompileData() {
+        setIsCompiling(true)
+        try {
 
         const WrongQuestionsArray = []
         const CorrectQuestionsArray = []
@@ -74,7 +77,6 @@ export default function ResultsPage() {
             }
         }
 
-        try {
             const response = await fetch(`${process.env.EXPO_PUBLIC_SERVER_URL}/api/logging`, {
                 method: "POST",
                 body: JSON.stringify({
@@ -87,38 +89,38 @@ export default function ResultsPage() {
             const score = (cq/(cq + wq)) * 10 
             const loggingData = await response.json()
 
-            if (loggingData?.content && type != "revision") {
-                const parsed = JSON.parse(loggingData.content)
 
-                await supabaseClient
-                    .from("materials")
-                    .update({
-                        score_table: parsed.topics,
-                        summary: parsed.summary,
-                        
-                    })
-                    .eq("user_id", userId)
-                    .eq("material_id", materialId)
-            }
 
 
             router.push({
                 pathname: '/Log',
-                params: { logSummary: loggingData.content, topic: topic, score: score },
+                params: { 
+                    logSummary: loggingData.content, 
+                    topic: topic, 
+                    score: score,
+                    materialName: materialName,
+                    materialId: materialId,
+                    bucketPath: bucketPath,                    sourceUri: sourceUri,                    autoLog: "false",
+                },
             })
         } catch (err) {
             console.log("Error: ", err)
+        } finally {
+            setIsCompiling(false)
         }
 
 
     }
 
     return (
-        <View>
+        <View style={{ flex: 1 }}>
+            {isCompiling && (
+                <View style={{ position: 'absolute', zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                    <ActivityIndicator size="large" />
+                </View>
+            )}
             {type === 'mcq' || type === "mcq-revision" ? (
-                <ScrollView style={{
-                    flex: 9
-                }}>
+                <ScrollView style={{ flex: 1 }}>
                     {data.map((question: MCQ, index: number) => (
                         <View key={index} style={{ padding: 16, borderBottomWidth: 1 }}>
                             <Text style={{
@@ -131,7 +133,7 @@ export default function ResultsPage() {
                                 gap: 5,
                             }}>
                                 {question.options.map((option: string, opIndex: number) => (
-                                    <View>
+                                    <View key={opIndex}>
                                         {(yourResponse[index] && yourResponse[index] == opIndex) ? (
                                             <Text style={{
                                                 color: `${rightOrWrong[index] ? '#4de136' : '#b21f1f'}`
@@ -150,7 +152,7 @@ export default function ResultsPage() {
                             </View>
 
 
-                            {rightOrWrong[index] !== null && (
+                            {rightOrWrong[index] != null && (
                                 <Text style={{
                                     color: rightOrWrong[index] ? '#4de136' : '#b21f1f'
                                 }}>
@@ -166,12 +168,10 @@ export default function ResultsPage() {
 
                 </ScrollView>
             ) : (type == "knowledge") ? (
-                <ScrollView style={{
-                    gap: 10
-                }}>
+                <ScrollView style={{ flex: 1, padding: 16 }}>
 
 
-                    {data.map((knowledge: Knowledge, index: number) => (
+                    {data?.map((knowledge: Knowledge, index: number) => (
                         <View key={index}>
                             <Text style={globalStyles.header}>
                                 {knowledge.title}
@@ -186,11 +186,9 @@ export default function ResultsPage() {
                     ))}
                 </ScrollView>
             ) : (type == "answers") ? (
-                <ScrollView style={{
-                    gap: 10
-                }}>
+                <ScrollView style={{ flex: 1, padding: 16 }}>
                     <Text style={globalStyles.header}>Answers</Text>
-                    {data.map((answers: Answers, index: number) => (
+                    {(Array.isArray(data) ? data : [data]).map((answers: Answers, index: number) => (
                         <View style={{ 
                             gap: 5
                         }} key={index}>
@@ -217,13 +215,29 @@ export default function ResultsPage() {
                     ))}
 
                 </ScrollView>
+            ) : (type == "marking" || type == "markingNoAnswer") ? (
+                <ScrollView style={{ gap: 10, padding: 16 }}>
+                    <Text style={globalStyles.header}>
+                        Score: {data?.results ? `${data.results.filter((r: any) => r.isCorrect).length}/${data.results.length}` : "N/A"}
+                    </Text>
+                    <Text style={{ marginTop: 8 }}>{data?.feedback}</Text>
+                    {data?.results?.map((r: any, i: number) => (
+                        <View key={i} style={{ marginTop: 12, padding: 10, backgroundColor: r.isCorrect ? '#e8f5e9' : '#ffebee', borderRadius: 8 }}>
+                            <Text style={{ fontWeight: 'bold' }}>Q{i + 1}: {r.question}</Text>
+                            <Text>Your answer: {r.studentAnswer}</Text>
+                            <Text>Correct: {r.correctAnswer}</Text>
+                            <Text style={{ color: r.isCorrect ? '#2e7d32' : '#c62828' }}>{r.isCorrect ? '✅ Correct' : '❌ Incorrect'}</Text>
+                            <Text>{r.explanation ?? ""}</Text>
+                        </View>
+                    ))}
+                </ScrollView>
             ) : (
                 <ScrollView style={{
                     gap: 10
                 }}>
 
                     <Text>
-                        Summary of common mistakes: {data}
+                        Summary of common mistakes: {JSON.stringify(data)}
                     </Text>
 
 
@@ -232,12 +246,20 @@ export default function ResultsPage() {
             )}
 
 
-            <View style={{
-                flex: 1
-            }}>
-                <Button onPress={() => CompileData()} text={"log"}>
+            <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                {(type != "marking" && type != "answers" && type != "knowledge") ? 
+                (
+                <Button onPress={() => CompileData()} text={"log"} disabled={isCompiling}>
 
                 </Button>
+                ) : (
+              
+                        <Button onPress={() => router.push({ pathname: '/Log', params: { autoLog: "true", materialName, materialId, bucketPath, topic } })} text={"complete"}>
+                        </Button>
+
+                 
+                    
+                )}
             </View>
             
         </View>

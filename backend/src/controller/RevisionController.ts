@@ -25,24 +25,37 @@ Output as a JSON array:
 
 Generate 5 questions. Focus specifically on the concepts the user struggled with. Each question should have exactly 4 options.`
 
-
+const prompt_revision = `Based on the summary of mistakes provided, generate a report in a string on what users may improve on, how to improve, what are common mistakes`
 
 export const handleRevision = async (req: Request, res: Response) => {
 
-    const { summarizedMistakes }  = req.body
+    const { summarizedMistakes, type }  = req.body
     try {
 
-        const response = await modelClient.chat.completions.create({
-            model: modelName,
-            messages: [
-                { role: 'system', content: instructions },
-                { role: 'user', content: summarizedMistakes + prompt }
-            ],
-            response_format: { type: 'json_object' }
-        })
+        if (type == "mcq-revision") {
+            const response = await modelClient.chat.completions.create({
+                model: modelName,
+                messages: [
+                    { role: 'system', content: instructions },
+                    { role: 'user', content: summarizedMistakes + prompt }
+                ],
+                response_format: { type: 'json_object' }
+            })
 
-        res.json({ content: response.choices[0].message.content })
+            res.json({ content: response.choices[0].message.content })
 
+        } else {
+            const response = await modelClient.chat.completions.create({
+                model: modelName,
+                messages: [
+                    { role: 'system', content: instructions },
+                    { role: 'user', content: summarizedMistakes + prompt_revision }
+                ],
+            })
+
+            res.json({ content: response.choices[0].message.content })
+        }
+       
     } catch (err) {
         console.log("Error: ", err)
 

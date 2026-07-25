@@ -1,5 +1,6 @@
 import { Text } from 'react-native'
 import { View } from 'react-native'
+import { ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useUserStore } from '@/stores/userStore'
 import { useEffect, useMemo, useState } from 'react'
@@ -10,49 +11,142 @@ import { supabaseClient } from '@/configs/supabaseClient'
 import fetchProfile from '@/utils/fetchProfile'
 
 import fetchTopics from '@/utils/fetchTopicData'
-import { LineChart } from 'react-native-gifted-charts'
+import { LineChart, PieChart } from 'react-native-gifted-charts'
 import Button from '@/components/Button'
 
 import { fetchMaterials } from '@/utils/fetchMaterials'
+import { globalStyles } from '@/styles/global'
+import { colors } from '@/styles/global'
 
 
-const colors = ['#4fc3f7', '#ff8a65', '#81c784', '#ba68c8', '#fff176', '#4db6ac']
+const chartColors = ['#4fc3f7', '#ff8a65', '#81c784', '#ba68c8', '#fff176', '#4db6ac']
+
 
 export default function HomeScreen() {
     const router = useRouter();
     const userId = useUserStore((state) => state.userId);
 
     const [topicPopup, setTopicPopup] = useState<string | null>(null)
+    const [isGenerating, setIsGenerating] = useState(false)
 
 
     const { data, error } = useQuery({
-        queryKey: [userId],
+        queryKey: ["profile", userId],
         queryFn: () => fetchProfile(userId!),
         enabled: !!userId,
     });
 
 
+    useEffect(() => {
+        if (error) console.log("fetchProfile:", error)
+    }, [error])
+
+
     const { data: dataMaterial, error: errorMaterial } = useQuery({
-        queryKey: [userId],
+        queryKey: ["materials", userId],
         queryFn: () => fetchMaterials(userId!),
         enabled: !!userId,
     });
 
 
     const { data: topic, error: errorTopic } = useQuery({
-        queryKey: [userId],
+        queryKey: ["topics", userId],
         queryFn: () => fetchTopics(userId!),
         enabled: !!userId,
     });
 
-    /* pause for testing
-    useEffect(() => {
-        if (!userId) {
-            router.replace('/Auth')
-        }
-    }, [userId])
 
-    */
+
+    const statistics = useMemo(() => {
+        
+
+
+        const statisticsBase = [
+            {
+                title: "Infomation Retention Rate",
+                number: -1,
+                total: 100
+            },
+
+            {
+                title: "Revision streak",
+                number: -1
+            },
+
+            {
+                title: "Topics Mastered",
+                number: -1,
+            },
+
+            {
+                title: "Topics Need Revision or Work",
+                number: -1,
+
+            },
+
+        ]
+
+
+        if (dataMaterial) {
+            const now = new Date()
+            const today = Math.floor(now.getTime() / 86400000)
+
+            const userDays = [...new Set(
+                dataMaterial.map(row => Math.floor(new Date(row.created_at).getTime() / 86400000))
+            )].sort((a, b) => b - a)
+
+
+            let streak = 0
+            for (let i = 0; i < userDays.length; i++) {
+                if (userDays[i] === today - i) {
+                    streak++
+                } else {
+                    break
+                }
+            }
+            statisticsBase[1].number = streak
+        }
+
+
+        if (data) {
+            const count = data?.retention?.[0]
+            const rententionTotalScore = data?.retention?.[0]
+
+            if (!count || !rententionTotalScore) {
+                statisticsBase[0].number = -1
+            } else {
+                const rententionAveragedScore = rententionTotalScore / count
+                statisticsBase[0].number = rententionAveragedScore
+            }
+            
+        }
+
+        if (topic) {
+            const strongScore = 8
+
+            let weakScore = 5
+            let StrongScore = 0
+
+            for (const row of topic) {
+                if (row.score >=  strongScore) {
+                    StrongScore += 1
+                } else if (row.score < weakScore) {
+                    weakScore += 1
+                }
+            }
+
+            statisticsBase[2].number = StrongScore
+            statisticsBase[3].number = weakScore
+        }  
+        
+
+        return statisticsBase
+
+    }, [topic, data, dataMaterial])
+
+
+
+
 
 
 
@@ -101,6 +195,8 @@ export default function HomeScreen() {
 
 
     async function handleSubmit(type : string) {
+        setIsGenerating(true)
+        try {
         
         const topic = topicPopup
 
@@ -119,6 +215,8 @@ export default function HomeScreen() {
                     type: type
                 })
             })
+
+            const data = await response.json()
         if (type == "mcq") {
 
             if (data?.content) {
@@ -136,6 +234,11 @@ export default function HomeScreen() {
                     params: { type: type, content: data.content},
                 })
             }
+        }
+        } catch (err) {
+            console.error("Failed to generate revision:", err)
+        } finally {
+            setIsGenerating(false)
         }
     }
 
@@ -179,7 +282,7 @@ export default function HomeScreen() {
                 }
             }
 
-            return { newArr, color: colors[i % colors.length], dataPointsColor: colors[i % colors.length] }
+            return { newArr, color: chartColors[i % chartColors.length], dataPointsColor: chartColors[i % chartColors.length] }
         });
 
         return hashTable
@@ -191,21 +294,121 @@ export default function HomeScreen() {
         data: Object.entries(value)
             .sort(([a], [b]) => Number(a) - Number(b))
             .map(([, score]) => ({ value: score })),
-        color: colors[i % colors.length],
-        dataPointsColor: colors[i % colors.length],
+        color: chartColors[i % chartColors.length],
+        dataPointsColor: chartColors[i % chartColors.length],
     }))
 
     return (
-        <View>
-            <Text>Home</Text>
+        <View style={{
+            flex: 1,
+            justifyContent:'center',
+            alignItems:'center'
+        }}>
+            {isGenerating && (
+                <View style={{ position: 'absolute', zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                    <ActivityIndicator size="large" color={colors.text} />
+                </View>
+            )}
+            <View style={{
+                margin: 5,
+                padding: 20,
+                borderRadius: 10,
+                width: 370,
+                height: 130,
+                backgroundColor: colors.surface,
+                borderColor: colors.Borders,
+                borderWidth: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                
+                gap: 16
+            }}>
+
+                <Text>
+                    Motivational quote of the day: 
+                </Text>
+                <Text style={{
+
+                    flexShrink: 1
+                }}>
+                    An apple a day keeps the doctor away
+                </Text>
+            </View>
+            <View style={{
+                margin: 5,
+                paddingTop: 20,
+                borderRadius: 10,
+                width: 370,
+                height: 130,
+                backgroundColor: colors.surface,
+                borderColor: colors.Borders,
+                borderWidth: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'row',
+                gap: 16
+            }}>
+                {statistics.map((item, index) => (
+                    <View key={index} style={{ alignItems: 'center' }}>
+                        {item.total ? (
+                            <View style={{ alignItems: 'center' }}>
+                                {item.number === -1 ? (
+                                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#999' }}>N/A</Text>
+                                ) : (
+                                    <PieChart
+                                        donut
+                                        radius={35}
+                                        innerRadius={26}
+                                        data={[
+                                            { value: item.number, color: chartColors[0] },
+                                            { value: item.total - item.number, color: '#e0e0e0' },
+                                        ]}
+                                        centerLabelComponent={() => (
+                                            <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.text }}>
+                                                {item.number}%
+                                            </Text>
+                                        )}
+                                    />
+                                )}
+                                <Text style={{ fontSize: 10, color: colors.text, marginTop: 4, textAlign: 'center', maxWidth: 70 }}>
+                                    {item.title}
+                                </Text>
+                            </View>
+                        ) : (
+                            <View style={{ alignItems: 'center' }}>
+                                <Text style={{ fontSize: 20, fontWeight: 'bold', color: item.number === -1 ? '#999' : chartColors[index % chartColors.length] }}>
+                                    {item.number === -1 ? 'N/A' : item.number}
+                                </Text>
+                                <Text style={{ fontSize: 10, color: colors.text, marginTop: 4, textAlign: 'center', maxWidth: 70 }}>
+                                    {item.title}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                ))}
+            </View>
 
 
+            <View style={{
+                margin: 5,
+                paddingTop: 20,
+                borderRadius: 10,
+                width: 370,
+                height: 270,
+                backgroundColor: colors.surface,
+                borderColor: colors.Borders,
+                borderWidth: 1
+                
+            }}>
 
-            <LineChart
-                data={allLines[0]?.data ?? []}
-                dataSet={allLines.slice(1)}
-                curved
-            />
+                <LineChart
+                    data={allLines[0]?.data ?? []}
+                    dataSet={allLines.slice(1)}
+                    curved
+                />
+            </View>
+
 
 
 
@@ -214,8 +417,8 @@ export default function HomeScreen() {
                     position: 'absolute',
 
                 }}>
-                    <Button text='Revise MCQ' onPress={() => handleSubmit("mcq")}></Button>
-                    <Button text='error revision (no points)' onPress={() => handleSubmit("error_revision")}></Button>
+                    <Button text='Revise MCQ' onPress={() => handleSubmit("mcq-revision")} disabled={isGenerating}></Button>
+                    <Button text='error revision (no points)' onPress={() => handleSubmit("knowledge-revision")} disabled={isGenerating}></Button>
                     
                 </View>
 

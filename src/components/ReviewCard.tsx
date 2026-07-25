@@ -33,7 +33,12 @@ export default function ReviewCard({data}: {data: Log}) {
                         <Text style={globalStyles.header}>
                             Weak concepts
                         </Text>
-                        {data.topics.filter((ConceptNScoreNReason: ConceptNScoreNReason) => (
+
+                        {!data?.topics && 
+                        <Text style={globalStyles.text}>
+                            NA
+                        </Text>}
+                        {data?.topics?.filter((ConceptNScoreNReason: ConceptNScoreNReason) => (
                             ConceptNScoreNReason.score <= 5
                         )).map((ConceptNScoreNReason: ConceptNScoreNReason, idx: number) => (
                             <View key={idx}>
@@ -60,7 +65,12 @@ export default function ReviewCard({data}: {data: Log}) {
                         <Text style={globalStyles.header}>
                             Strong concepts
                         </Text>
-                        {data.topics.filter((ConceptNScoreNReason: ConceptNScoreNReason) => (
+
+                        {!data?.topics && 
+                        <Text style={globalStyles.text}>
+                            NA
+                        </Text>}
+                        {data?.topics?.filter((ConceptNScoreNReason: ConceptNScoreNReason) => (
                             ConceptNScoreNReason.score > 5
                         )).map((ConceptNScoreNReason: ConceptNScoreNReason, idx: number) => (
                             <View key={idx}>

@@ -4,12 +4,12 @@ import { StyleSheet } from 'react-native';
 export const colors = {
   background: '#fefdfd',
   header: '#070707',
-  surface: '#2a2a4a',
+  surface: '#ebe9e9',
   primary: '#007AFF',
   text: '#070707',
   textSecondary: '#f4f4f5',
   alert: '#ff5252',
-  buttonBorders: "#a5a7a7"
+  Borders: "#1f1f1f"
 };
 
 
@@ -19,7 +19,7 @@ export const globalStyles = StyleSheet.create({
     
     height: 50,
     width: 300,
-    borderColor: colors.buttonBorders,
+    borderColor: colors.Borders,
     paddingHorizontal: 20,
     borderWidth: 1,
     borderRadius: 8,

@@ -7,11 +7,12 @@ interface ButtonProps {
     text?: string,
     onPress: () => void,
     children?: React.ReactNode
+    disabled?: boolean
 }
 
-export default function HollowButton({ text, onPress, children }: ButtonProps) {
+export default function HollowButton({ text, onPress, children, disabled }: ButtonProps) {
     return (
-        <TouchableOpacity onPress={onPress} style={styles.button}>
+        <TouchableOpacity onPress={onPress} disabled={disabled} style={[styles.button, disabled && { opacity: 0.5 }]}>
             <Text style={styles.text}>
                 { children ?? text }
             </Text>
@@ -24,7 +25,7 @@ const styles =  StyleSheet.create({
     button: {
         height: 50,
         width: 300,
-        borderColor: colors.buttonBorders,
+        borderColor: colors.Borders,
         paddingHorizontal: 20,
         justifyContent: 'center',
         alignItems: 'center',
