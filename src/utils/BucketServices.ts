@@ -3,6 +3,22 @@
 const BUCKET = "materials";
 
 import { supabaseClient } from "@/configs/supabaseClient";
+import * as Crypto from "expo-crypto";
+
+export async function getFileHash(fileUri: string): Promise<string | null> {
+  try {
+    const response = await fetch(fileUri)
+    const arrayBuffer = await response.arrayBuffer()
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    return await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      base64
+    )
+  } catch (err) {
+    console.error("Hash failed:", err)
+    return null
+  }
+}
 
 export async function uploadToBucket(userId: string, materialId: string, fileUri: string) {
   

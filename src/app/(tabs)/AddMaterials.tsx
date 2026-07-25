@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router'
 import { supabaseClient } from "@/configs/supabaseClient"
 import { useUserStore } from "@/stores/userStore"
-import { downloadFromBucket, uploadToBucket } from "../../utils/BucketServices"
+import { downloadFromBucket, uploadToBucket, getFileHash } from "../../utils/BucketServices"
 import { TouchableOpacity } from "react-native"
 
 import TagInput from "@/components/TagInput"
@@ -166,9 +166,9 @@ export default function AddMaterial() {
 
             const materialId = Crypto.randomUUID()
             const bucketPath = await uploadToBucket(userId, materialId, uri)
+            const fileHash = await getFileHash(uri)
 
-     
-            const {error} =  await supabaseClient
+            const {error} = await supabaseClient
                 .from("materials")
                 .upsert({
                     user_id: userId,
@@ -177,17 +177,19 @@ export default function AddMaterial() {
                     file_path: bucketPath,
                     folder: folder,
                     topic: tag,
-                    source_uri: uri,
-                })
+                    file_hash: fileHash,
+                }, { onConflict: 'user_id, file_hash' })
                 console.log(error)
             const nameAns = answerfile?.name || 'image.jpg'
             const uriAns = file?.uri || answerPhotoUri
+            let ansSaveError = false
             if (uriAns && userId) {
 
                 const answerMaterialId = Crypto.randomUUID()
                 const ansBucketPath = await uploadToBucket(userId, materialId, uri)
+                const ansFileHash = await getFileHash(uriAns)
 
-                await supabaseClient
+                const result = await supabaseClient
                     .from("materials")
                     .upsert({
                         user_id: userId,
@@ -196,11 +198,15 @@ export default function AddMaterial() {
                         file_path: ansBucketPath,
                         folder: folder,
                         topic: tag,
-                        source_uri: uriAns,
-                    })
+                        file_hash: ansFileHash,
+                    }, { onConflict: 'user_id, file_hash' })
             }
 
 
+            if (!error && !ansSaveError) {
+                useUserStore.getState().showToast("File saved!")
+            } else 
+   
 
             router.push({
                     pathname: '/Index',
@@ -298,9 +304,10 @@ export default function AddMaterial() {
             console.log(data)
             if (data?.content) {
                 console.log("6")
+                const fileHash = await getFileHash(uri)
                 router.push({
                     pathname: '/Results',
-                    params: { type: type, content: data.content, materialId: materialId, materialName: name, bucketPath: bucketPath, sourceUri: uri },
+                    params: { type: type, content: data.content, materialId: materialId, materialName: name, bucketPath: bucketPath, fileHash: fileHash },
                 })
             }
 

@@ -32,7 +32,7 @@ export default function Log() {
     const [isSaving, setIsSaving] = useState(false)
 
     const router = useRouter();
-    const { logSummary, topic, score, materialName, materialId, bucketPath, autoLog, sourceUri } = useLocalSearchParams<{ logSummary: string, topic: string, score: string, materialName: string, materialId: string, bucketPath: string, autoLog: string, sourceUri: string }>()
+    const { logSummary, topic, score, materialName, materialId, bucketPath, autoLog, fileHash } = useLocalSearchParams<{ logSummary: string, topic: string, score: string, materialName: string, materialId: string, bucketPath: string, autoLog: string, fileHash: string }>()
     const data = logSummary ? JSON.parse(logSummary) : null
 
     const [selectedFolder, setSelectedFolder] = useState("")
@@ -52,12 +52,12 @@ export default function Log() {
                     material_name: materialName,
                     material_id: materialId,
                     file_path: bucketPath,
-                    source_uri: sourceUri,
+                    file_hash: fileHash,
                     score_table: parsed.topics,
                     summary: parsed.summary,
                     topic: selectedDescp,
                     folder: selectedFolder
-                })
+                }, { onConflict: 'user_id, file_hash' })
 
             if (!autoLog) {
                 const { error: errorScore } = await supabaseClient
