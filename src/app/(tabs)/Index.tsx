@@ -6,7 +6,7 @@ import { useUserStore } from '@/stores/userStore'
 import { useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
-import { supabaseClient } from '@/configs/supabaseClient'
+import { supabaseClient } from '@/config/supabaseClient'
 
 import fetchProfile from '@/utils/fetchProfile'
 

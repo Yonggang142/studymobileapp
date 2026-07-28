@@ -1,4 +1,4 @@
-import { supabaseClient } from "@/configs/supabaseClient"
+import { supabaseClient } from "@/config/supabaseClient"
 
 export async function fetchMaterials(userId: string) {
     

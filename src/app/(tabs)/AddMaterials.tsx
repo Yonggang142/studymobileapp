@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react"
 import * as ImagePicker from 'expo-image-picker'
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router'
-import { supabaseClient } from "@/configs/supabaseClient"
+import { supabaseClient } from "@/config/supabaseClient"
 import { useUserStore } from "@/stores/userStore"
 import { downloadFromBucket, uploadToBucket, getFileHash } from "../../utils/bucketServices"
 import { TouchableOpacity } from "react-native"

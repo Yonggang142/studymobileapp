@@ -13,7 +13,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import ReviewCard from '@/components/ReviewCard'
 
-import { supabaseClient } from '@/configs/supabaseClient'
+import { supabaseClient } from '@/config/supabaseClient'
 
 import { useUserStore } from '@/stores/userStore'
 

@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView} from "react-native"
 import { useUserStore } from "@/stores/userStore"
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabaseClient } from "@/configs/supabaseClient"
+import { supabaseClient } from "@/config/supabaseClient"
 
 import { useMemo, useState } from "react"
 

@@ -1,4 +1,4 @@
-import { supabaseClient } from "@/configs/supabaseClient";
+import { supabaseClient } from "@/config/supabaseClient";
 
 export default async function fetchProfile(userId: string | null) {
 

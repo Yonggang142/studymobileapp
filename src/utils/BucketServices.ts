@@ -2,7 +2,7 @@
 
 const BUCKET = "materials";
 
-import { supabaseClient } from "@/configs/supabaseClient";
+import { supabaseClient } from "@/config/supabaseClient";
 import * as Crypto from "expo-crypto";
 
 export async function getFileHash(fileUri: string): Promise<string | null> {

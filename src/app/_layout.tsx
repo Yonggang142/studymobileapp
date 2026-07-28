@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { supabaseClient } from '@/configs/supabaseClient';
+import { supabaseClient } from '@/config/supabaseClient';
 import { useUserStore } from '@/stores/userStore';
 import { useRouter } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';

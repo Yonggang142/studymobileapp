@@ -4,7 +4,7 @@ import { colors } from '@/styles/global'
 import { globalStyles } from '@/styles/global'
 import Button from '@/components/Button'
 
-import { supabaseClient } from '@/configs/supabaseClient'
+import { supabaseClient } from '@/config/supabaseClient'
 import { useState } from 'react'
 
 import { Ionicons } from '@expo/vector-icons'
