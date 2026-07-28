@@ -8,7 +8,7 @@ import { useMemo, useState } from "react"
 import { useRouter } from 'expo-router'
 import { Ionicons } from "@expo/vector-icons"
 
-import { downloadFromBucket } from "../../utils/BucketServices"
+import { downloadFromBucket } from "../../utils/bucketServices"
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Button from "@/components/Button"

@@ -19,7 +19,7 @@ import { useUserStore } from '@/stores/userStore'
 
 import TagInput from '@/components/TagInput'
 
-import { uploadToBucket } from '@/utils/BucketServices'
+import { uploadToBucket } from '@/utils/bucketServices'
 
 import fetchTopics from '@/utils/fetchTopicData'
 

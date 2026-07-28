@@ -3,7 +3,7 @@ import { Router } from "express";
 import { analysisRouter } from "./Analysis";
 
 import { loggingRouter } from "./Logging";
-import { revisionRouter } from "./revision";
+import { revisionRouter } from "./Revision";
 const masterRouter = Router();
 
 

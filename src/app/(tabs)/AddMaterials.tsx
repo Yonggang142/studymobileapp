@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router'
 import { supabaseClient } from "@/configs/supabaseClient"
 import { useUserStore } from "@/stores/userStore"
-import { downloadFromBucket, uploadToBucket, getFileHash } from "../../utils/BucketServices"
+import { downloadFromBucket, uploadToBucket, getFileHash } from "../../utils/bucketServices"
 import { TouchableOpacity } from "react-native"
 
 import TagInput from "@/components/TagInput"
@@ -30,7 +30,7 @@ import fetchTopics from "@/utils/fetchTopicData"
 
 import { useRef } from "react"
 
-const testAsset = require("@/testAssets/Probability and Statistics.png")
+const testAsset = require("@/test-assets/probability-and-statistics.png")
 
 export default function AddMaterial() {
 
