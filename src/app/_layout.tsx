@@ -45,8 +45,8 @@ export default function RootLayout() {
                         title: 'Longitude',
                     }} 
                 >
-                    <Stack.Screen name='(tabs)'/>
-                    <Stack.Screen name='Results' options={{ headerShown: true, title: 'Results' }}/>
+                    <Stack.Screen name='(tabs)' options={{ headerShown: false }}/>
+                    <Stack.Screen name='Results' options={{ headerShown: false, title: 'Results' }}/>
                 </Stack>
                 {toastMessage && (
                     <View style={styles.toast}>

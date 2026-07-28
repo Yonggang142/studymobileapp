@@ -122,21 +122,21 @@ export default function HomeScreen() {
         }
 
         if (topic) {
-            const strongScore = 8
-
-            let weakScore = 5
-            let StrongScore = 0
+            const strongThreshold = 8
+            const weakThreshold = 5
+            let strongCount = 0
+            let weakCount = 0
 
             for (const row of topic) {
-                if (row.score >=  strongScore) {
-                    StrongScore += 1
-                } else if (row.score < weakScore) {
-                    weakScore += 1
+                if (row.score >= strongThreshold) {
+                    strongCount += 1
+                } else if (row.score < weakThreshold) {
+                    weakCount += 1
                 }
             }
 
-            statisticsBase[2].number = StrongScore
-            statisticsBase[3].number = weakScore
+            statisticsBase[2].number = strongCount
+            statisticsBase[3].number = weakCount
         }  
         
 
@@ -145,45 +145,6 @@ export default function HomeScreen() {
     }, [topic, data, dataMaterial])
 
 
-
-
-
-
-
-
-    /*
-    useEffect(() => {
-        const sampleMCQ = JSON.stringify([
-            {
-                question: 'What is the powerhouse of the cell?',
-                options: ['A) Nucleus', 'B) Mitochondria', 'C) Ribosome', 'D) Golgi apparatus'],
-                answer: 1,
-                explanation: 'Mitochondria produce ATP through cellular respiration.',
-            },
-            {
-                question: 'Which gas do plants absorb during photosynthesis?',
-                options: ['A) Oxygen', 'B) Nitrogen', 'C) Carbon dioxide', 'D) Hydrogen'],
-                answer: 2,
-                explanation: 'Plants use CO₂ and sunlight to produce glucose.',
-            },
-            {
-                question: "What is Newton's first law of motion?",
-                options: [
-                    'A) F = ma',
-                    'B) Action equals reaction',
-                    'C) Objects in motion stay in motion unless acted upon',
-                    'D) Energy cannot be created',
-                ],
-                answer: 2,
-                explanation: 'Also known as the law of inertia.',
-            },
-        ])
-        router.push({
-            pathname: '/Results',
-            params: { type: 'mcq', content: sampleMCQ },
-        })
-    }, [])
-    */
 
     const formatDate = (dayNum: string) => {
         const d = new Date(Number(dayNum) * 86400000)
@@ -237,6 +198,7 @@ export default function HomeScreen() {
         }
         } catch (err) {
             console.error("Failed to generate revision:", err)
+            useUserStore.getState().showToast("Revision failed")
         } finally {
             setIsGenerating(false)
         }

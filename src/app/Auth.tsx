@@ -83,6 +83,7 @@ export default function AuthPage() {
         } catch (err) {
             setErrorMsg("OAuth sign in failed")
             console.error(err)
+            useUserStore.getState().showToast("OAuth failed")
         } finally {
             setIsLoading(false)
         }
@@ -110,6 +111,7 @@ export default function AuthPage() {
         } catch (err) {
 
             setErrorMsg("Failed to sign up, please try again")
+            useUserStore.getState().showToast("Sign up failed")
             if (errorRef.current) {
                 clearTimeout(errorRef.current);
             }
@@ -158,6 +160,7 @@ export default function AuthPage() {
 
         } catch (err) {
             setErrorMsg("Account does not exist")
+            useUserStore.getState().showToast("Sign in failed")
             console.log("error: ", err)
         } finally {
             setIsLoading(false)

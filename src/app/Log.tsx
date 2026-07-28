@@ -4,7 +4,7 @@ import { useLocalSearchParams } from 'expo-router'
 import { View, Text, ActivityIndicator } from 'react-native'
 import { globalStyles } from '@/styles/global'
 import { useRouter } from 'expo-router'
-import { use, useState } from 'react'
+import { use, useMemo, useState } from 'react'
 
 import Button from '@/components/Button'
 import fetchAllFolders from "@/utils/fetchAllFolders"
@@ -18,6 +18,14 @@ import { supabaseClient } from '@/configs/supabaseClient'
 import { useUserStore } from '@/stores/userStore'
 
 import TagInput from '@/components/TagInput'
+
+import { uploadToBucket } from '@/utils/BucketServices'
+
+import fetchTopics from '@/utils/fetchTopicData'
+
+
+import * as Crypto from "expo-crypto"
+
 export default function Log() {
 
     const userId = useUserStore((state) => state.userId)
@@ -29,10 +37,17 @@ export default function Log() {
     });
 
 
+    const { data: topicsData, error: errorTopic } = useQuery({
+        queryKey: ["topics", userId],
+        queryFn: () => fetchTopics(userId!),
+        enabled: !!userId,
+    });
+
+
     const [isSaving, setIsSaving] = useState(false)
 
     const router = useRouter();
-    const { logSummary, topic, score, materialName, materialId, bucketPath, autoLog, fileHash } = useLocalSearchParams<{ logSummary: string, topic: string, score: string, materialName: string, materialId: string, bucketPath: string, autoLog: string, fileHash: string }>()
+    const { logSummary, topic, score, materialName, fileUri, answerFileName, answerFileUri, autoLog, fileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ answerFileName: string, logSummary: string, topic: string, score: string, materialName: string, fileUri: string, alreadyAnswerBucket: string, alreadyBucket: string, autoLog: string, answerFileUri: string,  fileHash: string }>()
     const data = logSummary ? JSON.parse(logSummary) : null
 
     const [selectedFolder, setSelectedFolder] = useState("")
@@ -44,43 +59,85 @@ export default function Log() {
         try {
             const parsed = data ?? {}
 
-            console.log("1")
-            const { error } = await supabaseClient
-                .from("materials")
-                .upsert({
-                    user_id: userId,
-                    material_name: materialName,
-                    material_id: materialId,
-                    file_path: bucketPath,
-                    file_hash: fileHash,
-                    score_table: parsed.topics,
-                    summary: parsed.summary,
-                    topic: selectedDescp,
-                    folder: selectedFolder
-                }, { onConflict: 'user_id, file_hash' })
+            //console.log("1")
+            let error = null
+            if (!alreadyBucket && userId) {
 
+                const materialId = Crypto.randomUUID()
+
+                const bucketPath = uploadToBucket(userId, materialId, fileUri)
+                const { error: addError } = await supabaseClient
+                    .from("materials")
+                    .upsert({
+                        user_id: userId,
+                        material_id: materialId,
+                        material_name: materialName,
+                        file_hash: fileHash,
+                        file_path: bucketPath,
+                        score_table: parsed.topics,
+                        summary: parsed.summary,
+                        topic: selectedDescp,
+                        folder: selectedFolder
+                    })
+                error = addError
+            }
+            
+            let errorScore = null
             if (!autoLog) {
-                const { error: errorScore } = await supabaseClient
+                const { error: insertError } = await supabaseClient
                     .from("topic_scores")
                     .insert({
                         user_id: userId,
                         topic: topic,
                         score: parseInt(score)
                     })
+                errorScore = insertError
             }
 
 
 
+            let errorAnswer = null
+            if (!alreadyAnswerBucket && userId) {
+
+                const materialId = Crypto.randomUUID()
+
+                const bucketPath = uploadToBucket(userId, materialId, answerFileUri)
+                const { error: errorAnswer } = await supabaseClient
+                    .from("materials")
+                    .upsert({
+                        user_id: userId,
+                        material_id: materialId,
+                        material_name: answerFileName, 
+                        file_hash: fileHash,
+                        file_path: bucketPath,
+                        score_table: parsed.topics,
+                        summary: parsed.summary,
+                        topic: selectedDescp,
+                        folder: selectedFolder
+                    })
+                error = errorAnswer
+            }
+
+
+            if (!error && !errorScore && !errorAnswer) {
+                useUserStore.getState().showToast("File saved!")
+            } else {
+                useUserStore.getState().showToast(`File saved failure ${error?.message ?? errorScore?.message}`)
+            }
             router.push('/Index')
         } catch (err) {
             console.error("Failed to save material and score:", err)
+            useUserStore.getState().showToast("Save failed")
         } finally {
             setIsSaving(false)
         }
     }
 
+    const topic_tags = useMemo(() => {
 
-
+        return [... new Set(topicsData?.map((row) => row.topic))]
+        
+    }, [topicsData])
 
 
     function handleDone() {
@@ -113,7 +170,7 @@ export default function Log() {
                         Give precise, descriptions to your stuff
                         Or match previous descriptions
                     </Text>
-                    <TagInput allTags={data?.topic_tags ?? []} placeholder="Topic that this folder classifies under" query={selectedDescp} setQuery={setSelectedDescp} />
+                    <TagInput allTags={topic_tags ?? []} placeholder="Topic that this folder classifies under" query={selectedDescp} setQuery={setSelectedDescp} />
 
                     <TagInput allTags={allFolders ?? []} placeholder="Folder to place document under" query={selectedFolder} setQuery={setSelectedFolder} />
 

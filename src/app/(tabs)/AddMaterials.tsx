@@ -26,6 +26,10 @@ import { fetchMaterials } from "@/utils/fetchMaterials"
 import { useLocalSearchParams } from "expo-router"
 import * as Crypto from "expo-crypto"
 
+import fetchTopics from "@/utils/fetchTopicData"
+
+import { useRef } from "react"
+
 const testAsset = require("@/testAssets/Probability and Statistics.png")
 
 export default function AddMaterial() {
@@ -42,7 +46,7 @@ export default function AddMaterial() {
                 const row = dataMaterial?.find((item) => item.material_id?.trim()?.toLowerCase() === query?.trim()?.toLowerCase())
                 if (!row) return
 
-                const bucketPath = row.file_url
+                const bucketPath = row.file_path
                 const { data } = await supabaseClient.storage
                     .from('materials')
                     .createSignedUrl(bucketPath, 300)
@@ -54,9 +58,9 @@ export default function AddMaterial() {
                 const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(fileName)
 
                 if (isImage) {
-                    setAnswerPhotoUri(url)
+                    setPhotoUri(url)
                 } else {
-                    setAnswerFile({
+                    setFile({
                         name: fileName,
                         uri: url,
                         mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream',
@@ -87,6 +91,9 @@ export default function AddMaterial() {
     const [query, setQuery] = useState("")
 
 
+
+    const gottenFromRepoRef = useRef("")
+    const gottenAnswerFromRepoRef = useRef("")
     const { data, error } = useQuery({
         queryKey: ["profile", userId],
         queryFn: () => fetchProfile(userId!),
@@ -106,6 +113,19 @@ export default function AddMaterial() {
         queryFn: () => fetchMaterials(userId!),
         enabled: !!userId,
     });
+
+
+    const { data: topicsData, error: errorTopic } = useQuery({
+        queryKey: ["topics", userId],
+        queryFn: () => fetchTopics(userId!),
+        enabled: !!userId,
+    });
+
+    const topic_tags = useMemo(() => {
+
+        return [... new Set(topicsData?.map((row) => row.topic))]
+        
+    }, [topicsData])
 
 
     const pickImage = async (type: string) => {
@@ -142,7 +162,6 @@ export default function AddMaterial() {
 
 
 
-
     function handleLogging() {
         setIsLogging(true)
     }
@@ -151,11 +170,12 @@ export default function AddMaterial() {
         try {
             setIsLoading(true)
             console.log("1")
-            await supabaseClient
+            const { error: topicError} = await supabaseClient
                 .from("topic_scores")
                 .insert([{ user_id: userId, topic: tag, score: null }])
 
-   
+            
+            console.log(topicError)
             const name = file?.name || 'image.jpg'
             const uri = file?.uri || photoUri
 
@@ -178,18 +198,18 @@ export default function AddMaterial() {
                     folder: folder,
                     topic: tag,
                     file_hash: fileHash,
-                }, { onConflict: 'user_id, file_hash' })
+                })
                 console.log(error)
             const nameAns = answerfile?.name || 'image.jpg'
             const uriAns = file?.uri || answerPhotoUri
-            let ansSaveError = false
+            let ansSaveError = null
             if (uriAns && userId) {
 
                 const answerMaterialId = Crypto.randomUUID()
                 const ansBucketPath = await uploadToBucket(userId, materialId, uri)
                 const ansFileHash = await getFileHash(uriAns)
-
-                const result = await supabaseClient
+                
+                const {error: ansError} = await supabaseClient
                     .from("materials")
                     .upsert({
                         user_id: userId,
@@ -199,13 +219,17 @@ export default function AddMaterial() {
                         folder: folder,
                         topic: tag,
                         file_hash: ansFileHash,
-                    }, { onConflict: 'user_id, file_hash' })
+                    })
+
+                    ansSaveError = ansError
             }
 
 
             if (!error && !ansSaveError) {
                 useUserStore.getState().showToast("File saved!")
-            } else 
+            } else {
+                useUserStore.getState().showToast(`File saved failure ${error?.message ?? ansSaveError?.message}`)
+            }
    
 
             router.push({
@@ -213,6 +237,7 @@ export default function AddMaterial() {
                 })
         } catch (err) {
             console.log("failed to submit tags")
+            useUserStore.getState().showToast("Save failed")
         } finally {
             setFile(null)
             setPhotoUri(null)
@@ -242,7 +267,7 @@ export default function AddMaterial() {
         setIsLoading(true)
         try {
 
-            const materialId = Crypto.randomUUID()
+      
 
             const name = file?.name || 'image.jpg'
             const uri = file?.uri || photoUri
@@ -251,18 +276,18 @@ export default function AddMaterial() {
                 console.log("ABORT — uri:", uri, "userId:", userId)
                 return
             }
-
-            const bucketPath = await uploadToBucket(userId, materialId, uri)
-            console.log("1")
+            
+            
+            //console.log("1")
 
 
             console.log(error)
 
-            console.log("2")
+            //console.log("2")
             const formData = new FormData()
 
             if (photoUri) {
-                console.log("3")
+                //console.log("3")
 
                 const blob = await getBlobFromUri(photoUri);
 
@@ -273,12 +298,13 @@ export default function AddMaterial() {
 
 
             if (file?.uri) {
-                console.log("4")
+                //console.log("4")
                 const fileBlob = await getBlobFromUri(file.uri)
                 formData.append('file', fileBlob, file.name)
             }
 
             if (type == "marking") {
+                
                 if (answerPhotoUri) {
                     const ansBlob = await getBlobFromUri(answerPhotoUri)
                     formData.append('answerFile', ansBlob, 'answer.jpg')
@@ -292,27 +318,31 @@ export default function AddMaterial() {
 
 
             formData.append('type', type)
-
+            
             const response = await fetch(`${process.env.EXPO_PUBLIC_SERVER_URL}/api/analysis`, {
                 method: "POST",
                 body: formData,
             })
-            console.log("5")
+            //console.log("5")
             // create material path here
 
             const data = await response.json()
-            console.log(data)
+
+            const answerName = answerfile?.name || 'AnswerImage.jpg'
+            const answerUri = answerfile?.uri || answerPhotoUri
+            // console.log(data)
             if (data?.content) {
-                console.log("6")
+                //console.log("6")
                 const fileHash = await getFileHash(uri)
                 router.push({
                     pathname: '/Results',
-                    params: { type: type, content: data.content, materialId: materialId, materialName: name, bucketPath: bucketPath, fileHash: fileHash },
+                    params: { type: type, content: data.content, answerFileName: answerName, answerFileUri: answerUri,fileUri: uri, alreadyAnswerBucket: gottenAnswerFromRepoRef.current, alreadyBucket: gottenFromRepoRef.current, materialName: name, fileHash: fileHash },
                 })
             }
 
         } catch (err) {
             console.log("Error: ", err)
+            useUserStore.getState().showToast("Analysis failed")
         } finally {
             setIsLoading(false)
         }
@@ -324,18 +354,17 @@ export default function AddMaterial() {
     }
     */
 
-
     const allMaterials = useMemo(() => {
         if (!dataMaterial) return []
         return dataMaterial.map((item) => item.material_name)
     }, [dataMaterial])
 
 
-    async function handleSubmit() {
+    async function handleSubmit(type ?: string) {
         const row = dataMaterial?.find((item) => item.material_name?.trim().toLowerCase() === query?.trim().toLowerCase())
         if (!row) return
 
-        const bucketPath = row.file_url
+        const bucketPath = row.file_path
         const { data } = await supabaseClient.storage
             .from('materials')
             .createSignedUrl(bucketPath, 300)
@@ -346,21 +375,40 @@ export default function AddMaterial() {
         const fileName = row.title ?? row.material_name ?? 'file'
         const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(fileName)
 
-        if (isImage) {
-            setAnswerPhotoUri(url)
+        if (addAnswerSheet) {
+            if (isImage) {
+                setAnswerPhotoUri(url)
+            } else {
+                setAnswerFile({
+                    name: fileName,
+                    uri: url,
+                    mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream',
+                    size: 0,
+                } as DocumentPicker.DocumentPickerAsset)
+            }
+            gottenAnswerFromRepoRef.current = bucketPath
         } else {
-            setAnswerFile({
-                name: fileName,
-                uri: url,
-                mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream',
-                size: 0,
-            } as DocumentPicker.DocumentPickerAsset)
+            if (isImage) {
+                setPhotoUri(url)
+            } else {
+                setFile({
+                    name: fileName,
+                    uri: url,
+                    mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream',
+                    size: 0,
+                } as DocumentPicker.DocumentPickerAsset)
+            }
+            gottenFromRepoRef.current = bucketPath
+        }
+       
+        setQuery("")
+        if (type == "marking") {
+            handleUpload("marking")
         }
 
-        handleUpload("marking")
     }
 
-
+    console.log(photoUri, file, isLogging, addAnswerSheet)
     // console.log(dataMaterial)
     return (
         <ScrollView contentContainerStyle={{
@@ -387,7 +435,7 @@ export default function AddMaterial() {
                         Give precise, descriptions to your stuff
                         Or match previous descriptions
                     </Text>
-                    <TagInput allTags={data?.topic_tags ?? []} placeholder="Topic that this folder classifies under" query={selectedDescp} setQuery={setSelectedDescp} />
+                    <TagInput allTags={topic_tags ?? []} placeholder="Topic that this folder classifies under" query={selectedDescp} setQuery={setSelectedDescp} />
 
                     <TagInput allTags={allFolders ?? []} placeholder="Folder to place document under" query={selectedFolder} setQuery={setSelectedFolder} />
 
@@ -474,6 +522,8 @@ export default function AddMaterial() {
                                 </Text>
                             </Button>
 
+                            
+
 
                             <View>
                                 <Button onPress={() => handleSubmit()} width={200} disabled={isLoading}>
@@ -514,6 +564,22 @@ export default function AddMaterial() {
                             New Material from Files
                         </Text>
                     </Button>
+
+
+
+                    <View>
+                        <Button onPress={() => handleSubmit()} width={200} disabled={isLoading}>
+                            <Ionicons name="add" size={25} color={"#ffffff"} />
+                            <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
+                                New Material from Respository
+                            </Text>
+                        </Button>
+                        <TagInput allTags={allMaterials ?? []} query={query} setQuery={setQuery}>
+
+                        </TagInput>
+
+
+                    </View>
                     {/* 
                     <Button onPress={testPhoto} width={200}>
                         <Text style={{ color: "#ffffff", paddingLeft: 7 }}>

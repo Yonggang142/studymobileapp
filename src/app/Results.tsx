@@ -34,7 +34,7 @@ export default function ResultsPage() {
 
     const router = useRouter()
     const userId = useUserStore((state) => state.userId)
-    const { type, content, materialId, topic, materialName, bucketPath, fileHash } = useLocalSearchParams<{ type: string; content: string, materialId: string, topic: string, materialName: string, bucketPath: string, fileHash: string }>()
+    const { type, content, fileUri, answerFileName, topic, materialName, answerFileUri, fileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ type: string; content: string, fileUri: string, topic: string, materialName: string, alreadyAnswerBucket: string, answerFileUri: string, alreadyBucket: string,  fileHash: string, answerFileName: string }>()
     const data = content ? JSON.parse(content) : null
 
     const [rightOrWrong, setRightOrWrong] = useState<(Boolean | null)[]>([])
@@ -95,18 +95,22 @@ export default function ResultsPage() {
             router.push({
                 pathname: '/Log',
                 params: { 
+                    answerFileName: answerFileName,
                     logSummary: loggingData.content, 
                     topic: topic, 
                     score: score,
                     materialName: materialName,
-                    materialId: materialId,
-                    bucketPath: bucketPath,
+                    fileUri: fileUri,
+                    alreadyAnswerBucket: alreadyAnswerBucket,
+                    alreadyBucket: alreadyBucket,
                     fileHash: fileHash,
                     autoLog: "true",
+                    answerFileUri: answerFileUri
                 },
             })
         } catch (err) {
             console.log("Error: ", err)
+            useUserStore.getState().showToast("Logging failed")
         } finally {
             setIsCompiling(false)
         }
@@ -256,7 +260,12 @@ export default function ResultsPage() {
                 </Button>
                 ) : (
               
-                        <Button onPress={() => router.push({ pathname: '/Log', params: { autoLog: "true", materialName, materialId, bucketPath, topic, fileHash } })} text={"complete"}>
+                        <Button onPress={() => router.push(
+                            { 
+                                pathname: '/Log', 
+                                params: { autoLog: "true", materialName, answerFileUri, fileUri, topic, fileHash, alreadyAnswerBucket, alreadyBucket, answerFileName } 
+                            
+                            })} text={"complete"}>
                         </Button>
 
                  

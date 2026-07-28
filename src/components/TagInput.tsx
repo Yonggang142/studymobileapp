@@ -22,11 +22,12 @@ export default function TagInput({ allTags, query, setQuery, placeholder }: {
 
         <View style={{ position: 'relative' }}>
             <TextInput
-                style={globalStyles.textInput}
+                style={[globalStyles.textInput, { height: undefined, minHeight: 50 }]}
                 placeholder={placeholder ?? ""}
                 onChangeText={(str) => setQuery(str)}
                 value={query}
                 onFocus={() => setIsDropdown(true)}
+                multiline
             />
 
             {isDropdown && (

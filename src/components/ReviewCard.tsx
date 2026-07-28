@@ -23,7 +23,8 @@ export default function ReviewCard({data}: {data: Log}) {
             {data && (
                 <View style={{
                         flexDirection: "column",
-                        gap: 20
+                        gap: 20,
+                        marginTop: 50
                     }}>
                     <View style={{
                         flexDirection: "column",

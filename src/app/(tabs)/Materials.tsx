@@ -1,8 +1,8 @@
-import { View, Text, TouchableOpacity, ActivityIndicator} from "react-native"
+import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView} from "react-native"
 import { useUserStore } from "@/stores/userStore"
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabaseClient } from "@/configs/supabaseClient"
-import { globalStyles } from "@/styles/global"
+
 import { useMemo, useState } from "react"
 
 import { useRouter } from 'expo-router'
@@ -16,6 +16,8 @@ import Button from "@/components/Button"
 import Log from "../Log"
 import ReviewCard from "@/components/ReviewCard"
 import { fetchMaterials } from '@/utils/fetchMaterials'
+
+import { globalStyles } from "@/styles/global"
 
 
 interface ConceptNScoreNReason {
@@ -73,6 +75,7 @@ export default function Materials() {
 
         } catch (err) {
             console.error('Download failed:', err)
+            useUserStore.getState().showToast("Download failed")
         } finally {
             setIsLoading(false)
         }
@@ -117,7 +120,7 @@ export default function Materials() {
 
     }
 
-
+    console.log(folderNames)
 
     return (
         <>  
@@ -153,11 +156,7 @@ export default function Materials() {
 
             {showMoreInfo ? (
                 <View>
-                    <TouchableOpacity onPress={() => setShowMoreInfo(null)}>
-                        <Text>
-                            Back
-                        </Text>
-                    </TouchableOpacity>
+
 
 
                
@@ -165,23 +164,28 @@ export default function Materials() {
                 
     
                     
+                   <View style={{
+                        flexDirection: 'row',
+
+                   }}>
+                      <TouchableOpacity onPress={(e) => {e.stopPropagation(); downloadFile(showMoreInfo.file_path, showMoreInfo.material_name)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
+                        <Ionicons name="download" size={30}/>
+                        </TouchableOpacity>
+
+
+                        <TouchableOpacity onPress={(e) => {e.stopPropagation(); setWarningPopup(true)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
+                            <Ionicons name="trash" size={30}/>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={(e) => {e.stopPropagation(); setSelectedMaterial(showMoreInfo.material_id)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
+                            <Ionicons name="move" size={30}/>
+                        </TouchableOpacity>
+                    </View> 
+                  
+
                     <Button text="back" onPress={() => setShowMoreInfo(null)}/>
                    
 
-                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); downloadFile(showMoreInfo.file_path, showMoreInfo.material_name)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
-                        <Ionicons name="download" size={30}/>
-                    </TouchableOpacity>
-
-
-                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); setWarningPopup(true)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
-                        <Ionicons name="trash" size={30}/>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={(e) => {e.stopPropagation(); setSelectedMaterial(showMoreInfo.material_id)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
-                        <Ionicons name="move" size={30}/>
-                    </TouchableOpacity>
-
-                    
 
 
                      {selectedMaterial && (
@@ -201,60 +205,68 @@ export default function Materials() {
                 </View>
 
             ) : (
-                 <View>
+                <View style={{ flex: 1 }}>
+                    <ScrollView style={{ flex: 1, marginTop: 80, marginHorizontal: 30}} contentContainerStyle={{ flexGrow: 1 }}>
+                        
+                        {folderNames.length ? (folderNames.map((item: string) => (
+                            <TouchableOpacity key={item} onPress={() => setFolderPopup(item)}>
+                                <Text>
+                                    {item}
+                                </Text>
+
+                                {folderPopup != "" && data && item == folderPopup && data.filter((item) => item.folder == folderPopup).map((item) => (
+                            <TouchableOpacity style={{marginLeft: 20}} key={item.material_id} onPress={() => setShowMoreInfo(item)}>
                     
-                    {folderNames ? (folderNames.map((item: string) => (
-                        <TouchableOpacity key={item} onPress={() => setFolderPopup(item)}>
-                            <Text>
-                                {item}
-                            </Text>
-                        </TouchableOpacity>
-                    ))): (
-                        <View>
-
-                            <Text>
-                                Respository is empty
-                            </Text>
 
 
-                           
-                            <Button text={"Add materials"} onPress={() => router.push("/(tabs)/AddMaterials")}>
-
-                            </Button>
-                        </View>
-                    )}
-
-                    {folderPopup != "" && data && data.filter((item) => item.folder == folderPopup).map((item) => (
-                        <TouchableOpacity style={{marginLeft: 20}} key={item.material_id} onPress={() => setShowMoreInfo(item)}>
-                            <Text style={globalStyles.header}>
-                                {item.title}
-                            </Text>
+                                <Text>
+                                    Material name: {item.material_name}
+                                </Text>
 
 
-                            <Text>
-                                {item.material_name}
-                            </Text>
+                                <Text>
+                                    Created at: {item.created_at}
+                                </Text>
 
 
-                            <Text>
-                                {item.created_at}
-                            </Text>
+                                <Text>
+                                    Topic: {item.topic}
+                                </Text>
+
+                            </TouchableOpacity>
+
+                        ))}
+                            </TouchableOpacity>
+                        ))): (
+                            <View style={{
+                                alignItems: "center",
+                                justifyContent: 'center',
+                                flex: 1
+                            }}>
+
+                                <Text style={globalStyles.header}>
+                                    Respository is empty
+                                </Text>
 
 
+                            </View>
+                        )}
+
+                        
+                    
+                            
+                    </ScrollView>
 
 
+                    <View style={{ paddingBottom: 30, paddingTop: 20}}>
+                        <Button text="Add material" onPress={() => { 
+                            router.push({
+                                pathname: '/AddMaterials',
 
-                        </TouchableOpacity>
-
-                    ))}
-
-                    <Button text="Add material" onPress={() => { 
-                        router.push({
-                            pathname: '/AddMaterials',
-
-                        })
-                    }}/>
-                           
+                            })
+                        }}/>
+                    </View>
+                        
                 </View>
             )}
         </>
