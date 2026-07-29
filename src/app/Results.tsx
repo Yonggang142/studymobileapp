@@ -34,7 +34,7 @@ export default function ResultsPage() {
 
     const router = useRouter()
     const userId = useUserStore((state) => state.userId)
-    const { type, content, fileUri, answerFileName, topic, materialName, answerFileUri, fileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ type: string; content: string, fileUri: string, topic: string, materialName: string, alreadyAnswerBucket: string, answerFileUri: string, alreadyBucket: string,  fileHash: string, answerFileName: string }>()
+    const { type, content, fileUri, answerFileName, topic, materialName, answerFileUri, fileHash, answerFileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ type: string; content: string, fileUri: string, topic: string, materialName: string, alreadyAnswerBucket: string, answerFileUri: string, answerFileHash: string, alreadyBucket: string,  fileHash: string, answerFileName: string }>()
     const data = content ? JSON.parse(content) : null
 
     const [rightOrWrong, setRightOrWrong] = useState<(Boolean | null)[]>([])
@@ -105,7 +105,8 @@ export default function ResultsPage() {
                     alreadyBucket: alreadyBucket,
                     fileHash: fileHash,
                     autoLog: "true",
-                    answerFileUri: answerFileUri
+                    answerFileUri: answerFileUri,                    
+                    answerFileHash: answerFileHash,
                 },
             })
         } catch (err) {
@@ -263,7 +264,7 @@ export default function ResultsPage() {
                         <Button onPress={() => router.push(
                             { 
                                 pathname: '/Log', 
-                                params: { autoLog: "true", materialName, answerFileUri, fileUri, topic, fileHash, alreadyAnswerBucket, alreadyBucket, answerFileName } 
+                                params: { autoLog: "true", materialName, answerFileUri, answerFileHash, fileUri, topic, fileHash, alreadyAnswerBucket, alreadyBucket, answerFileName } 
                             
                             })} text={"complete"}>
                         </Button>

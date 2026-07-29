@@ -3,17 +3,18 @@
 const BUCKET = "materials";
 
 import { supabaseClient } from "@/config/supabaseClient";
-import * as Crypto from "expo-crypto";
+import { File } from "expo-file-system";
 
 export async function getFileHash(fileUri: string): Promise<string | null> {
   try {
-    const response = await fetch(fileUri)
-    const arrayBuffer = await response.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
-    return await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      base64
-    )
+    const file = new File(fileUri)
+    if (!file.exists) {
+      console.error("Hash failed: file not found at", fileUri)
+      return null
+    }
+    const info = file.info({ md5: true })
+    console.log("getFileHash — md5:", info.md5)
+    return info.md5 ?? null
   } catch (err) {
     console.error("Hash failed:", err)
     return null
@@ -22,16 +23,17 @@ export async function getFileHash(fileUri: string): Promise<string | null> {
 
 export async function uploadToBucket(userId: string, materialId: string, fileUri: string) {
   
-  console.log("uploadToBucket — fetching:", fileUri)
-  const response = await fetch(fileUri)
-  const arrayBuffer = await response.arrayBuffer()
+  console.log("uploadToBucket — reading:", fileUri)
+  // fetch() doesn't support file:// URIs on Android — use expo-file-system File class
+  const file = new File(fileUri)
+  const arrayBuffer = await file.arrayBuffer()
+  const contentType = mimeFromUri(fileUri) ?? 'application/octet-stream'
   
   const path = `${userId}/${materialId}`
   
-  // Pass ArrayBuffer directly — Supabase storage accepts it
   const { error } = await supabaseClient.storage
     .from(BUCKET)
-    .upload(path, arrayBuffer, { contentType: response.headers.get("content-type") || "application/octet-stream", upsert: true });
+    .upload(path, arrayBuffer, { contentType, upsert: true });
 
   if (error) {
     console.error("Bucket upload failed:", error);
@@ -39,6 +41,17 @@ export async function uploadToBucket(userId: string, materialId: string, fileUri
   }
 
   return path;
+}
+
+const mimeFromUri = (uri: string): string | null => {
+  const ext = uri.split('.').pop()?.toLowerCase() ?? ''
+  const map: Record<string, string> = {
+    jpg: 'image/jpeg', jpeg: 'image/jpeg',
+    png: 'image/png', gif: 'image/gif',
+    webp: 'image/webp', bmp: 'image/bmp',
+    pdf: 'application/pdf',
+  }
+  return map[ext] ?? null
 }
 
 

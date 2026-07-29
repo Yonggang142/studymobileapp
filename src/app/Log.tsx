@@ -9,7 +9,7 @@ import { use, useMemo, useState } from 'react'
 import Button from '@/components/Button'
 import fetchAllFolders from "@/utils/fetchAllFolders"
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import ReviewCard from '@/components/ReviewCard'
 
@@ -45,9 +45,10 @@ export default function Log() {
 
 
     const [isSaving, setIsSaving] = useState(false)
+    const queryClient = useQueryClient()
 
     const router = useRouter();
-    const { logSummary, topic, score, materialName, fileUri, answerFileName, answerFileUri, autoLog, fileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ answerFileName: string, logSummary: string, topic: string, score: string, materialName: string, fileUri: string, alreadyAnswerBucket: string, alreadyBucket: string, autoLog: string, answerFileUri: string,  fileHash: string }>()
+    const { logSummary, topic, score, materialName, fileUri, answerFileName, answerFileUri, answerFileHash, autoLog, fileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ answerFileName: string, logSummary: string, topic: string, score: string, materialName: string, fileUri: string, alreadyAnswerBucket: string, alreadyBucket: string, autoLog: string, answerFileUri: string, answerFileHash: string,  fileHash: string }>()
     const data = logSummary ? JSON.parse(logSummary) : null
 
     const [selectedFolder, setSelectedFolder] = useState("")
@@ -59,13 +60,10 @@ export default function Log() {
         try {
             const parsed = data ?? {}
 
-            //console.log("1")
             let error = null
-            if (!alreadyBucket && userId) {
-
+            if (!alreadyBucket && userId && fileUri) {
                 const materialId = Crypto.randomUUID()
-
-                const bucketPath = uploadToBucket(userId, materialId, fileUri)
+                const bucketPath = await uploadToBucket(userId, materialId, fileUri)
                 const { error: addError } = await supabaseClient
                     .from("materials")
                     .upsert({
@@ -81,7 +79,7 @@ export default function Log() {
                     })
                 error = addError
             }
-            
+
             let errorScore = null
             if (!autoLog) {
                 const { error: insertError } = await supabaseClient
@@ -94,35 +92,33 @@ export default function Log() {
                 errorScore = insertError
             }
 
-
-
             let errorAnswer = null
-            if (!alreadyAnswerBucket && userId) {
-
+            if (!alreadyAnswerBucket && userId && answerFileUri) {
                 const materialId = Crypto.randomUUID()
-
-                const bucketPath = uploadToBucket(userId, materialId, answerFileUri)
-                const { error: errorAnswer } = await supabaseClient
+                const bucketPath = await uploadToBucket(userId, materialId, answerFileUri)
+                const { error: ansError } = await supabaseClient
                     .from("materials")
                     .upsert({
                         user_id: userId,
                         material_id: materialId,
-                        material_name: answerFileName, 
-                        file_hash: fileHash,
+                        material_name: answerFileName,
+                        file_hash: answerFileHash,
                         file_path: bucketPath,
                         score_table: parsed.topics,
                         summary: parsed.summary,
                         topic: selectedDescp,
                         folder: selectedFolder
                     })
-                error = errorAnswer
+                errorAnswer = ansError
             }
-
 
             if (!error && !errorScore && !errorAnswer) {
                 useUserStore.getState().showToast("File saved!")
+                queryClient.invalidateQueries({ queryKey: ["materials", userId] })
+                queryClient.invalidateQueries({ queryKey: ["topics", userId] })
+                queryClient.invalidateQueries({ queryKey: ["folders", userId] })
             } else {
-                useUserStore.getState().showToast(`File saved failure ${error?.message ?? errorScore?.message}`)
+                useUserStore.getState().showToast(`File saved failure ${error?.message ?? errorScore?.message ?? errorAnswer?.message}`)
             }
             router.push('/Index')
         } catch (err) {
@@ -186,8 +182,10 @@ export default function Log() {
             ) : (
                 <>
                     {!autoLog && <ReviewCard data={data} />}
-                    <Button text={autoLog ? "dont store it" : "continue without storing score"} onPress={handleDone} />
-                    <Button text={autoLog ? "store the file (no quiz stored btw)" : "store the score!"} onPress={() => setIsLogging(true)} disabled={isSaving} />
+                    <Button text={autoLog ? "Done" : "continue without storing score"} onPress={handleDone} />
+                    {!alreadyBucket && (
+                        <Button text={autoLog ? "store the file (no quiz stored btw)" : "store the score!"} onPress={() => setIsLogging(true)} disabled={isSaving} />
+                    )}
                 </>
             )}
 

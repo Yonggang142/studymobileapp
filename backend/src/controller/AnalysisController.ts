@@ -102,6 +102,16 @@ Output as a JSON object:
 const instructions = "You are an expert exam preparation assistant. Analyze the provided image carefully. Output ONLY valid JSON matching the requested format exactly. Do not include markdown formatting, code blocks, or any text outside the JSON."
 const modelName = "gpt-4o-mini"  // supports image_url vision
 
+const mimeFromFilename = (name: string): string | null => {
+    const ext = name.split('.').pop()?.toLowerCase() ?? ''
+    const map: Record<string, string> = {
+        jpg: 'image/jpeg', jpeg: 'image/jpeg',
+        png: 'image/png', gif: 'image/gif',
+        webp: 'image/webp', bmp: 'image/bmp',
+    }
+    return map[ext] ?? null
+}
+
 export const handleAnalysis = async (req: Request, res: Response) => {
     try {
 
@@ -131,7 +141,10 @@ export const handleAnalysis = async (req: Request, res: Response) => {
             } else {
                 const base64 = fs.readFileSync(f.path, { encoding: 'base64' })
                 const fileLabel = label ? `[${label}]` : ''
-                return[{ type: 'image_url', image_url: { url: `data:${f.mimetype};base64,${base64}` } }]
+                // Infer MIME type from extension — multer's mimetype comes from the
+                // request header, which may be application/octet-stream for signed URLs
+                const mime = mimeFromFilename(f.originalname) ?? f.mimetype
+                return[{ type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } }]
              
             }
         }

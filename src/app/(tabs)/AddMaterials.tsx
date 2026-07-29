@@ -15,7 +15,7 @@ import { TouchableOpacity } from "react-native"
 
 import TagInput from "@/components/TagInput"
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import fetchProfile from "@/utils/fetchProfile"
 
@@ -90,10 +90,10 @@ export default function AddMaterial() {
 
     const [query, setQuery] = useState("")
 
+    const queryClient = useQueryClient()
 
-
-    const gottenFromRepoRef = useRef("")
-    const gottenAnswerFromRepoRef = useRef("")
+    const gottenFromRepoRef = useRef({ bucket: "", hash: "" })
+    const gottenAnswerFromRepoRef = useRef({ bucket: "", hash: "" })
     const { data, error } = useQuery({
         queryKey: ["profile", userId],
         queryFn: () => fetchProfile(userId!),
@@ -166,28 +166,29 @@ export default function AddMaterial() {
         setIsLogging(true)
     }
 
+
     async function handleSubmitLogs(tag: string, folder: string) {
         try {
             setIsLoading(true)
             console.log("1")
-            const { error: topicError} = await supabaseClient
-                .from("topic_scores")
-                .insert([{ user_id: userId, topic: tag, score: null }])
 
             
-            console.log(topicError)
-            const name = file?.name || 'image.jpg'
+            //console.log(topicError)
+            const name = file?.name || (photoUri ? photoUri.split('/').pop() || 'file' : 'file')
             const uri = file?.uri || photoUri
 
             if (!uri || !userId) {
                 console.log("ABORT handleSubmitLogs — missing uri or userId")
+                useUserStore.getState().showToast("No file selected")
                 return
             }
-
+            
             const materialId = Crypto.randomUUID()
-            const bucketPath = await uploadToBucket(userId, materialId, uri)
-            const fileHash = await getFileHash(uri)
+            const bucketPath = gottenFromRepoRef.current.bucket || await uploadToBucket(userId, materialId, uri)
+            const fileHash = gottenFromRepoRef.current.hash || await getFileHash(uri)
 
+            
+            console.log(fileHash, uri)
             const {error} = await supabaseClient
                 .from("materials")
                 .upsert({
@@ -200,20 +201,27 @@ export default function AddMaterial() {
                     file_hash: fileHash,
                 })
                 console.log(error)
-            const nameAns = answerfile?.name || 'image.jpg'
-            const uriAns = file?.uri || answerPhotoUri
+
+
+            if (!error) {
+                const { error: topicError} = await supabaseClient
+                    .from("topic_scores")
+                    .insert([{ user_id: userId, topic: tag, score: null }])
+            }
+            const nameAns = answerfile?.name || (answerPhotoUri ? answerPhotoUri.split('/').pop() || 'file' : 'file')
+            const uriAns = answerfile?.uri || answerPhotoUri
             let ansSaveError = null
             if (uriAns && userId) {
 
                 const answerMaterialId = Crypto.randomUUID()
-                const ansBucketPath = await uploadToBucket(userId, materialId, uri)
-                const ansFileHash = await getFileHash(uriAns)
+                const ansBucketPath = gottenAnswerFromRepoRef.current.bucket || await uploadToBucket(userId, answerMaterialId, uriAns)
+                const ansFileHash = gottenAnswerFromRepoRef.current.hash || await getFileHash(uriAns)
                 
                 const {error: ansError} = await supabaseClient
                     .from("materials")
                     .upsert({
                         user_id: userId,
-                        material_name: name,
+                        material_name: nameAns,
                         material_id: answerMaterialId,
                         file_path: ansBucketPath,
                         folder: folder,
@@ -227,6 +235,9 @@ export default function AddMaterial() {
 
             if (!error && !ansSaveError) {
                 useUserStore.getState().showToast("File saved!")
+                queryClient.invalidateQueries({ queryKey: ["materials", userId] })
+                queryClient.invalidateQueries({ queryKey: ["topics", userId] })
+                queryClient.invalidateQueries({ queryKey: ["folders", userId] })
             } else {
                 useUserStore.getState().showToast(`File saved failure ${error?.message ?? ansSaveError?.message}`)
             }
@@ -253,13 +264,34 @@ export default function AddMaterial() {
     const getBlobFromUri = (uri: string): Promise<Blob> => {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.onload = () => resolve(xhr.response as Blob);
+            xhr.onload = () => {
+                const blob = xhr.response as Blob
+                // Signed URLs from Supabase may return application/octet-stream
+                // instead of the real MIME type. Infer from the filename extension.
+                const mime = mimeFromUri(uri)
+                if (mime && (!blob.type || blob.type === 'application/octet-stream')) {
+                    resolve(new Blob([blob], { type: mime }))
+                } else {
+                    resolve(blob)
+                }
+            };
             xhr.onerror = () => reject(new TypeError('Network request failed'));
             xhr.responseType = 'blob';
             xhr.open('GET', uri, true);
             xhr.send(null);
         });
     };
+
+    const mimeFromUri = (uri: string): string | null => {
+        const ext = uri.split('.').pop()?.toLowerCase() ?? ''
+        const map: Record<string, string> = {
+            jpg: 'image/jpeg', jpeg: 'image/jpeg',
+            png: 'image/png', gif: 'image/gif',
+            webp: 'image/webp', bmp: 'image/bmp',
+            pdf: 'application/pdf',
+        }
+        return map[ext] ?? null
+    }
 
 
     const handleUpload = async (type: string) => {
@@ -269,7 +301,7 @@ export default function AddMaterial() {
 
       
 
-            const name = file?.name || 'image.jpg'
+            const name = file?.name || (photoUri ? photoUri.split('/').pop() || 'file' : 'file')
             const uri = file?.uri || photoUri
 
             if (!uri || !userId) {
@@ -281,7 +313,7 @@ export default function AddMaterial() {
             //console.log("1")
 
 
-            console.log(error)
+            //console.log(error)
 
             //console.log("2")
             const formData = new FormData()
@@ -328,15 +360,15 @@ export default function AddMaterial() {
 
             const data = await response.json()
 
-            const answerName = answerfile?.name || 'AnswerImage.jpg'
+            const answerName = answerfile?.name || (answerPhotoUri ? answerPhotoUri.split('/').pop() || 'file' : 'file')
             const answerUri = answerfile?.uri || answerPhotoUri
-            // console.log(data)
+            console.log(data)
             if (data?.content) {
-                //console.log("6")
-                const fileHash = await getFileHash(uri)
+                const fileHash = gottenFromRepoRef.current.hash || await getFileHash(uri)
+                const answerFileHash = gottenAnswerFromRepoRef.current.hash || (answerUri ? await getFileHash(answerUri) : null)
                 router.push({
                     pathname: '/Results',
-                    params: { type: type, content: data.content, answerFileName: answerName, answerFileUri: answerUri,fileUri: uri, alreadyAnswerBucket: gottenAnswerFromRepoRef.current, alreadyBucket: gottenFromRepoRef.current, materialName: name, fileHash: fileHash },
+                    params: { type: type, content: data.content, answerFileName: answerName, answerFileUri: answerUri, answerFileHash: answerFileHash, fileUri: uri, alreadyAnswerBucket: gottenAnswerFromRepoRef.current.bucket, alreadyBucket: gottenFromRepoRef.current.bucket, materialName: name, fileHash: fileHash },
                 })
             }
 
@@ -386,7 +418,7 @@ export default function AddMaterial() {
                     size: 0,
                 } as DocumentPicker.DocumentPickerAsset)
             }
-            gottenAnswerFromRepoRef.current = bucketPath
+            gottenAnswerFromRepoRef.current = { bucket: bucketPath, hash: row.file_hash ?? "" }
         } else {
             if (isImage) {
                 setPhotoUri(url)
@@ -398,7 +430,7 @@ export default function AddMaterial() {
                     size: 0,
                 } as DocumentPicker.DocumentPickerAsset)
             }
-            gottenFromRepoRef.current = bucketPath
+            gottenFromRepoRef.current = { bucket: bucketPath, hash: row.file_hash ?? "" }
         }
        
         setQuery("")
@@ -408,7 +440,7 @@ export default function AddMaterial() {
 
     }
 
-    console.log(photoUri, file, isLogging, addAnswerSheet)
+    //console.log(photoUri, file, isLogging, addAnswerSheet)
     // console.log(dataMaterial)
     return (
         <ScrollView contentContainerStyle={{

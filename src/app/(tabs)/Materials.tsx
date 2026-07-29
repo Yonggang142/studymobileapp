@@ -54,7 +54,7 @@ export default function Materials() {
     const [warningPopup, setWarningPopup] = useState(false)
     const queryClient = useQueryClient()
     const { data, error } = useQuery({
-        queryKey: [userId],
+        queryKey: ["materials", userId],
         queryFn: () => fetchMaterials(userId!),
         enabled: !!userId,
     });
@@ -114,6 +114,7 @@ export default function Materials() {
             .eq("id", materialId)
 
         if (error) console.error(error)
+        else queryClient.invalidateQueries({ queryKey: ["materials", userId] })
         } finally {
             setIsLoading(false)
         }
