@@ -6,12 +6,13 @@ import { useUserStore } from '@/stores/userStore';
 import { useRouter } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 
+const queryClient = new QueryClient()
+
 export default function RootLayout() {
     const router = useRouter()
     const setUserId = useUserStore((state) => state.setUserId)
     const setLoading = useUserStore((state) => state.setLoading)
     const toastMessage = useUserStore((state) => state.toastMessage)
-    const queryClient = new QueryClient()
     const userId = useUserStore((state) => state.userId)
     const loading = useUserStore((state) => state.loading)
 

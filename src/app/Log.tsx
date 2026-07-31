@@ -19,8 +19,6 @@ import { useUserStore } from '@/stores/userStore'
 
 import TagInput from '@/components/TagInput'
 
-import { uploadToBucket } from '@/utils/bucketServices'
-
 import fetchTopics from '@/utils/fetchTopicData'
 
 
@@ -48,12 +46,14 @@ export default function Log() {
     const queryClient = useQueryClient()
 
     const router = useRouter();
-    const { logSummary, topic, score, materialName, fileUri, answerFileName, answerFileUri, answerFileHash, autoLog, fileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ answerFileName: string, logSummary: string, topic: string, score: string, materialName: string, fileUri: string, alreadyAnswerBucket: string, alreadyBucket: string, autoLog: string, answerFileUri: string, answerFileHash: string,  fileHash: string }>()
+    const { logSummary, topic, score, summary, materialName, fileUri, bucketPath, answerBucketPath, answerFileName, answerFileUri, answerFileHash, fileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ answerFileName: string, logSummary: string, topic: string, score: string, summary: string, materialName: string, fileUri: string, bucketPath: string, answerBucketPath: string, alreadyAnswerBucket: string, alreadyBucket: string, answerFileUri: string, answerFileHash: string, fileHash: string }>()
     const data = logSummary ? JSON.parse(logSummary) : null
 
     const [selectedFolder, setSelectedFolder] = useState("")
     const [selectedDescp, setSelectedDescp] = useState("")
     const [isLogging, setIsLogging] = useState(false)
+
+
 
     async function handleStore(selectedDescp: string, selectedFolder: string) {
         setIsSaving(true)
@@ -61,9 +61,8 @@ export default function Log() {
             const parsed = data ?? {}
 
             let error = null
-            if (!alreadyBucket && userId && fileUri) {
+            if (!alreadyBucket && userId && bucketPath) {
                 const materialId = Crypto.randomUUID()
-                const bucketPath = await uploadToBucket(userId, materialId, fileUri)
                 const { error: addError } = await supabaseClient
                     .from("materials")
                     .upsert({
@@ -73,7 +72,7 @@ export default function Log() {
                         file_hash: fileHash,
                         file_path: bucketPath,
                         score_table: parsed.topics,
-                        summary: parsed.summary,
+                        summary: summary || parsed.summary,
                         topic: selectedDescp,
                         folder: selectedFolder
                     })
@@ -81,7 +80,7 @@ export default function Log() {
             }
 
             let errorScore = null
-            if (!autoLog) {
+            if (score) {
                 const { error: insertError } = await supabaseClient
                     .from("topic_scores")
                     .insert({
@@ -93,9 +92,8 @@ export default function Log() {
             }
 
             let errorAnswer = null
-            if (!alreadyAnswerBucket && userId && answerFileUri) {
+            if (!alreadyAnswerBucket && userId && answerBucketPath) {
                 const materialId = Crypto.randomUUID()
-                const bucketPath = await uploadToBucket(userId, materialId, answerFileUri)
                 const { error: ansError } = await supabaseClient
                     .from("materials")
                     .upsert({
@@ -103,9 +101,9 @@ export default function Log() {
                         material_id: materialId,
                         material_name: answerFileName,
                         file_hash: answerFileHash,
-                        file_path: bucketPath,
+                        file_path: answerBucketPath,
                         score_table: parsed.topics,
-                        summary: parsed.summary,
+                        summary: summary || parsed.summary,
                         topic: selectedDescp,
                         folder: selectedFolder
                     })
@@ -132,13 +130,32 @@ export default function Log() {
     const topic_tags = useMemo(() => {
 
         return [... new Set(topicsData?.map((row) => row.topic))]
-        
+
     }, [topicsData])
 
 
-    function handleDone() {
+    async function handleDone() {
+        // Discard: delete uploaded files, nothing to keep
+        setIsSaving(true)
+        try {
+            if (bucketPath && !alreadyBucket) {
+                await supabaseClient.storage.from('materials').remove([bucketPath])
+                await supabaseClient.from('materials').delete().eq('file_path', bucketPath)
+            }
+            if (answerBucketPath && !alreadyAnswerBucket) {
+                await supabaseClient.storage.from('materials').remove([answerBucketPath])
+                await supabaseClient.from('materials').delete().eq('file_path', answerBucketPath)
+            }
+            queryClient.invalidateQueries({ queryKey: ["materials", userId] })
+        } catch {
+        } finally {
+            setIsSaving(false)
+        }
         router.push('/Index')
     }
+
+  
+    console.log(alreadyBucket)
 
     return (
         <View style={{
@@ -181,10 +198,14 @@ export default function Log() {
                 </View>
             ) : (
                 <>
-                    {!autoLog && <ReviewCard data={data} />}
-                    <Button text={autoLog ? "Done" : "continue without storing score"} onPress={handleDone} />
-                    {!alreadyBucket && (
-                        <Button text={autoLog ? "store the file (no quiz stored btw)" : "store the score!"} onPress={() => setIsLogging(true)} disabled={isSaving} />
+                    {score && <ReviewCard data={data} />}
+                    {!alreadyBucket && !alreadyAnswerBucket ? (
+                        <>
+                            <Button text={"Save & go home"} onPress={() => setIsLogging(true)} disabled={isSaving} />
+                            <Button text={"Discard"} onPress={handleDone} disabled={isSaving} />
+                        </>
+                    ) : (
+                        <Button text={"Go home"} onPress={() => router.push('/Index')} />
                     )}
                 </>
             )}

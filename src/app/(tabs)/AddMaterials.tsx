@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router'
 import { supabaseClient } from "@/config/supabaseClient"
 import { useUserStore } from "@/stores/userStore"
-import { downloadFromBucket, uploadToBucket, getFileHash } from "../../utils/bucketServices"
+import { downloadFromBucket, uploadToBucket, getFileHash, findExistingFile } from "../../utils/bucketServices"
 import { TouchableOpacity } from "react-native"
 
 import TagInput from "@/components/TagInput"
@@ -184,10 +184,29 @@ export default function AddMaterial() {
             }
             
             const materialId = Crypto.randomUUID()
-            const bucketPath = gottenFromRepoRef.current.bucket || await uploadToBucket(userId, materialId, uri)
             const fileHash = gottenFromRepoRef.current.hash || await getFileHash(uri)
+            const bucketPath = gottenFromRepoRef.current.bucket 
+                || await findExistingFile(userId!, fileHash!)
+                || await uploadToBucket(userId!, materialId, uri)
 
-            
+            // Get AI summary of the material
+            let materialSummary = ''
+            if (!gottenFromRepoRef.current.bucket) {
+                try {
+                    const blob = await getBlobFromUri(uri)
+                    const photoName = uri.split('/').pop() || 'file'
+                    const fd = new FormData()
+                    fd.append('file', blob, photoName)
+                    fd.append('type', 'knowledge')
+                    const summaryRes = await fetch(`${process.env.EXPO_PUBLIC_SERVER_URL}/api/analysis`, {
+                        method: "POST",
+                        body: fd,
+                    })
+                    const summaryData = await summaryRes.json()
+                    materialSummary = summaryData?.summary || ''
+                } catch { /* summary is optional */ }
+            }
+
             console.log(fileHash, uri)
             const {error} = await supabaseClient
                 .from("materials")
@@ -199,6 +218,7 @@ export default function AddMaterial() {
                     folder: folder,
                     topic: tag,
                     file_hash: fileHash,
+                    summary: materialSummary || null,
                 })
                 console.log(error)
 
@@ -214,8 +234,10 @@ export default function AddMaterial() {
             if (uriAns && userId) {
 
                 const answerMaterialId = Crypto.randomUUID()
-                const ansBucketPath = gottenAnswerFromRepoRef.current.bucket || await uploadToBucket(userId, answerMaterialId, uriAns)
                 const ansFileHash = gottenAnswerFromRepoRef.current.hash || await getFileHash(uriAns)
+                const ansBucketPath = gottenAnswerFromRepoRef.current.bucket 
+                    || await findExistingFile(userId!, ansFileHash!)
+                    || await uploadToBucket(userId!, answerMaterialId, uriAns)
                 
                 const {error: ansError} = await supabaseClient
                     .from("materials")
@@ -227,6 +249,7 @@ export default function AddMaterial() {
                         folder: folder,
                         topic: tag,
                         file_hash: ansFileHash,
+                        summary: materialSummary || null,
                     })
 
                     ansSaveError = ansError
@@ -364,11 +387,21 @@ export default function AddMaterial() {
             const answerUri = answerfile?.uri || answerPhotoUri
             console.log(data)
             if (data?.content) {
+                // Hash first, check for existing file, upload only if new
                 const fileHash = gottenFromRepoRef.current.hash || await getFileHash(uri)
                 const answerFileHash = gottenAnswerFromRepoRef.current.hash || (answerUri ? await getFileHash(answerUri) : null)
+                
+                const bucketPath = gottenFromRepoRef.current.bucket 
+                    || await findExistingFile(userId!, fileHash!)
+                    || await uploadToBucket(userId!, Crypto.randomUUID(), uri)
+                    
+                const answerBucketPath = gottenAnswerFromRepoRef.current.bucket 
+                    || (answerUri && answerFileHash ? await findExistingFile(userId!, answerFileHash) : null)
+                    || (answerUri ? await uploadToBucket(userId!, Crypto.randomUUID(), answerUri) : '')
+                    
                 router.push({
                     pathname: '/Results',
-                    params: { type: type, content: data.content, answerFileName: answerName, answerFileUri: answerUri, answerFileHash: answerFileHash, fileUri: uri, alreadyAnswerBucket: gottenAnswerFromRepoRef.current.bucket, alreadyBucket: gottenFromRepoRef.current.bucket, materialName: name, fileHash: fileHash },
+                    params: { type: type, content: data.content, summary: data.summary, answerFileName: answerName, answerFileUri: answerUri, answerFileHash: answerFileHash, fileUri: uri, bucketPath: bucketPath, answerBucketPath: answerBucketPath, alreadyAnswerBucket: gottenAnswerFromRepoRef.current.bucket, alreadyBucket: gottenFromRepoRef.current.bucket, materialName: name, fileHash: fileHash },
                 })
             }
 
@@ -558,15 +591,16 @@ export default function AddMaterial() {
 
 
                             <View>
+                                <TagInput allTags={allMaterials ?? []} query={query} setQuery={setQuery}>
+
+                                </TagInput>
                                 <Button onPress={() => handleSubmit()} width={200} disabled={isLoading}>
                                     <Ionicons name="add" size={25} color={"#ffffff"} />
                                     <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
                                         New Material from Respository
                                     </Text>
                                 </Button>
-                                <TagInput allTags={allMaterials ?? []} query={query} setQuery={setQuery}>
-
-                                </TagInput>
+                                
 
 
                             </View>

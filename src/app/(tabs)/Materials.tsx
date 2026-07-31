@@ -86,10 +86,14 @@ export default function Materials() {
     , [data])
 
    
-    async function deleteFile(materialId: string) {
+    async function deleteFile(materialId: string, filePath: string) {
         
         setIsLoading(true)
         try {
+        // Delete from Supabase storage first
+        if (filePath) {
+            await supabaseClient.storage.from('materials').remove([filePath])
+        }
         const { error } = await supabaseClient
             .from("materials")
             .delete()
@@ -136,14 +140,19 @@ export default function Materials() {
                     alignItems: 'center',
                     backgroundColor: 'rgba(0,0,0,0.5)',
                     zIndex: 20,
+         
                 }}>
-                    <Text>
+                    <Text style={{
+                        fontSize:25,
+                        color: '#ffffff',
+                        fontWeight: "bold"
+                    }}>
                         Are u sure u wannt deleted
                     </Text>
 
-                    <Button text="yessir" onPress={() => {deleteFile(showMoreInfo.material_id); setWarningPopup(false); setShowMoreInfo(null)}}/>
+                    <Button text="yessir" onPress={() => {deleteFile(showMoreInfo.material_id, showMoreInfo.file_path); setWarningPopup(false); setShowMoreInfo(null)}}/>
 
-                     <Button text="back" onPress={() => setWarningPopup(false)}/>
+                     <Button text="no thx" onPress={() => setWarningPopup(false)}/>
 
                 </View>
 
@@ -210,7 +219,7 @@ export default function Materials() {
                     <ScrollView style={{ flex: 1, marginTop: 80, marginHorizontal: 30}} contentContainerStyle={{ flexGrow: 1 }}>
                         
                         {folderNames.length ? (folderNames.map((item: string) => (
-                            <TouchableOpacity key={item} onPress={() => setFolderPopup(item)}>
+                            <TouchableOpacity key={item} onPress={() => setFolderPopup(folderPopup === item ? "" : item)}>
                                 <Text>
                                     {item}
                                 </Text>

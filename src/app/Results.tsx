@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router'
 import { globalStyles } from '@/styles/global'
 import { supabaseClient } from '@/config/supabaseClient'
 import { useUserStore } from '@/stores/userStore'
-
+import { useMemo } from 'react'
 
 interface MCQ {
     question: string
@@ -34,8 +34,11 @@ export default function ResultsPage() {
 
     const router = useRouter()
     const userId = useUserStore((state) => state.userId)
-    const { type, content, fileUri, answerFileName, topic, materialName, answerFileUri, fileHash, answerFileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ type: string; content: string, fileUri: string, topic: string, materialName: string, alreadyAnswerBucket: string, answerFileUri: string, answerFileHash: string, alreadyBucket: string,  fileHash: string, answerFileName: string }>()
-    const data = content ? JSON.parse(content) : null
+    const { type, content, summary, fileUri, bucketPath, answerBucketPath, answerFileName, topic, materialName, answerFileUri, fileHash, answerFileHash, alreadyAnswerBucket, alreadyBucket } = useLocalSearchParams<{ type: string; content: string, summary: string, fileUri: string, bucketPath: string, answerBucketPath: string, topic: string, materialName: string, alreadyAnswerBucket: string, answerFileUri: string, answerFileHash: string, alreadyBucket: string,  fileHash: string, answerFileName: string }>()
+    const data = useMemo(() => {
+        if (!content) return null
+        try { return JSON.parse(content) } catch { return content }
+    }, [content])
 
     const [rightOrWrong, setRightOrWrong] = useState<(Boolean | null)[]>([])
     const [yourResponse, setYourResponse] = useState<(number | null)[]>([])
@@ -69,7 +72,7 @@ export default function ResultsPage() {
         const WrongQuestionsArray = []
         const CorrectQuestionsArray = []
 
-        for (let i = 0; i < data.Length; i++) {
+        for (let i = 0; i < data.length; i++) {
             if (rightOrWrong[i]) {
                 CorrectQuestionsArray.push(data[i].question)
             } else {
@@ -104,9 +107,11 @@ export default function ResultsPage() {
                     alreadyAnswerBucket: alreadyAnswerBucket,
                     alreadyBucket: alreadyBucket,
                     fileHash: fileHash,
-                    autoLog: "true",
                     answerFileUri: answerFileUri,                    
                     answerFileHash: answerFileHash,
+                    summary: summary,
+                    bucketPath: bucketPath,
+                    answerBucketPath: answerBucketPath,
                 },
             })
         } catch (err) {
@@ -128,7 +133,7 @@ export default function ResultsPage() {
             )}
             {type === 'mcq' || type === "mcq-revision" ? (
                 <ScrollView style={{ flex: 1 }}>
-                    {data.map((question: MCQ, index: number) => (
+                    {(Array.isArray(data) ? data : data?.questions || []).map((question: MCQ, index: number) => (
                         <View key={index} style={{ padding: 16, borderBottomWidth: 1 }}>
                             <Text style={{
                                 fontSize: 20,
@@ -174,11 +179,11 @@ export default function ResultsPage() {
 
 
                 </ScrollView>
-            ) : (type == "knowledge") ? (
+            ) : (type == "knowledge" || type == "knowledge-revision") ? (
                 <ScrollView style={{ flex: 1, padding: 16 }}>
+                 
 
-
-                    {data?.map((knowledge: Knowledge, index: number) => (
+                    {(Array.isArray(data) ? data : data?.topics || []).map((knowledge: Knowledge, index: number) => (
                         <View key={index}>
                             <Text style={globalStyles.header}>
                                 {knowledge.title}
@@ -191,11 +196,12 @@ export default function ResultsPage() {
                             ))}
                         </View>
                     ))}
+                    
                 </ScrollView>
             ) : (type == "answers") ? (
                 <ScrollView style={{ flex: 1, padding: 16 }}>
                     <Text style={globalStyles.header}>Answers</Text>
-                    {(Array.isArray(data) ? data : [data]).map((answers: Answers, index: number) => (
+                    {(Array.isArray(data) ? data : data?.questions || [data]).map((answers: Answers, index: number) => (
                         <View style={{ 
                             gap: 5
                         }} key={index}>
@@ -254,7 +260,7 @@ export default function ResultsPage() {
 
 
             <View style={{ paddingVertical: 12, alignItems: 'center' }}>
-                {(type != "marking" && type != "answers" && type != "knowledge") ? 
+                {(type != "marking" && type != "answers" && type != "knowledge" && type != "knowledge-revision") ? 
                 (
                 <Button onPress={() => CompileData()} text={"log"} disabled={isCompiling}>
 
@@ -264,7 +270,7 @@ export default function ResultsPage() {
                         <Button onPress={() => router.push(
                             { 
                                 pathname: '/Log', 
-                                params: { autoLog: "true", materialName, answerFileUri, answerFileHash, fileUri, topic, fileHash, alreadyAnswerBucket, alreadyBucket, answerFileName } 
+                                params: { materialName, answerFileUri, answerFileHash, fileUri, bucketPath, answerBucketPath, topic, fileHash, alreadyAnswerBucket, alreadyBucket, answerFileName, summary } 
                             
                             })} text={"complete"}>
                         </Button>

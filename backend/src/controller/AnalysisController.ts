@@ -11,45 +11,52 @@ const modelClient = new OpenAI({
 const typeToPrompt: Record<string, string> = {
     answers: `Look at the questions in this image. Output ONLY the answers in clear numerical order.
 
-Output as a JSON array:
-[
-  {
-    "question": "...",
-    "options": ["...", "...", "...", "..."],
-    "answer": 0,
-    "explanation": "..."
-  }
-]
-
-If a question has multiple parts (a, b, c), label them as 1a, 1b, 1c.`,
+Output as a JSON object:
+{
+  "summary": "Brief 2-3 sentence summary of what this material covers",
+  "questions": [
+    {
+      "question": "...",
+      "options": ["...", "...", "...", "..."],
+      "answer": 0,
+      "explanation": "..."
+    }
+  ]
+}`,
 
     mcq: `Based on the content in this image, generate a multiple-choice quiz.
 
-Output as a JSON array:
-[
-  {
-    "question": "...",
-    "options": ["...", "...", "...", "..."],
-    "answer": 0,
-    "explanation": "..."
-  }
-]
+Output as a JSON object:
+{
+  "summary": "Brief 2-3 sentence summary of what this material covers",
+  "questions": [
+    {
+      "question": "...",
+      "options": ["...", "...", "...", "..."],
+      "answer": 0,
+      "explanation": "..."
+    }
+  ]
+}
 
 Generate 5 questions. Cover key concepts, similar in vibe to the file provided, not trivia. Each question should have multiple options.`,
 
     knowledge: `Summarize the key knowledge points from this content. 
 
-Output as a JSON array:
-[
-  {
-    "title": "Topic 1",
-    "points": ["Key point 1", "Key point 2", ...]
-  },
-  {
-    "title": "Topic 2",
-    "points": ["Key point 1", "Key point 2", ...]
-  }
-]
+Output as a JSON object:
+{
+  "summary": "Brief 2-3 sentence summary of what this material covers",
+  "topics": [
+    {
+      "title": "Topic 1",
+      "points": ["Key point 1", "Key point 2", ...]
+    },
+    {
+      "title": "Topic 2",
+      "points": ["Key point 1", "Key point 2", ...]
+    }
+  ]
+}
 
 Include 2-4 topics. Each topic should have 2-3 concise, well-explained points. Focus on concepts that would appear in an exam, not filler.`,
 
@@ -62,6 +69,7 @@ Include 2-4 topics. Each topic should have 2-3 concise, well-explained points. F
 
 Output as a JSON object:
 {
+  "summary": "Brief 2-3 sentence summary of what this test material covers",
   "score": "3/5",
   "Non Attempted": 0,
   "results": [
@@ -84,6 +92,7 @@ Output as a JSON object:
 
     Output as a JSON object:
     {
+    "summary": "Brief 2-3 sentence summary of what this test material covers",
     "score": "3/5",
     "Non Attempted": 0,
     "results": [
@@ -172,7 +181,11 @@ export const handleAnalysis = async (req: Request, res: Response) => {
             ],
         })
 
-        res.json({ content: response.choices[0].message.content })
+        const raw = JSON.parse(response.choices[0].message.content || '{}')
+        res.json({
+            content: JSON.stringify(raw),
+            summary: raw.summary || ''
+        })
 
 
 

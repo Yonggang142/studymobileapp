@@ -77,3 +77,16 @@ export async function downloadFromBucket(bucketFilePath: string) {
 
   return response.arrayBuffer();
 }
+
+/** Check if a file with this hash already exists in DB — returns its bucket path */
+export async function findExistingFile(userId: string, fileHash: string): Promise<string | null> {
+  if (!fileHash) return null
+  const { data } = await supabaseClient
+    .from("materials")
+    .select("file_path")
+    .eq("user_id", userId)
+    .eq("file_hash", fileHash)
+    .limit(1)
+    .single()
+  return data?.file_path ?? null
+}
