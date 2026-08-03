@@ -504,12 +504,12 @@ export default function HomeScreen() {
 
 
                         <View style={{
-                            margin: 5,
+                            marginTop: 5,
                             paddingTop: 20,
                             borderRadius: 10,
                             width: 350,
-                            height: 270,
-
+                            marginBottom: 10,
+                            paddingBottom: 20,
                             backgroundColor: colors.surface,
 
                         }}>
@@ -521,7 +521,7 @@ export default function HomeScreen() {
                                 width={290}
                                 xAxisThickness={1}
                                 xAxisColor={colors.Borders}
-                                xAxisLabelTextStyle={{ color: colors.text, fontSize: 9 }}
+                                xAxisLabelTextStyle={{ opacity: 0 }}
                                 yAxisThickness={1}
                                 yAxisColor={colors.Borders}
                                 yAxisTextStyle={{ color: colors.text, fontSize: 10 }}
@@ -531,28 +531,55 @@ export default function HomeScreen() {
                                 endSpacing={10}
                                 disableScroll={true}
 
+                                focusEnabled={true}
+                                dataPointsRadius={20}
+                                showDataPointLabelOnFocus={true}
+                                focusTogether={false}
+                                unFocusOnPressOut={false}
+                                dataPointLabelWidth={64}
+                                dataPointLabelShiftY={-34}
+                                dataPointLabelComponent={(item: any) =>
+                                    item?.label ? (
+                                        <View style={{
+                                            backgroundColor: '#741e99',
+                                            borderRadius: 6,
+                                            paddingHorizontal: 7,
+                                            paddingVertical: 4,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}>
+                                            <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: 'bold' }}>
+                                                {item.label}
+                                            </Text>
+                                        </View>
+                                    ) : null
+                                }
                             />
+
+
+                            {lines.length > 0 && (
+                                <View style={{
+                                    flexDirection: 'row',
+                                    flexWrap: 'wrap',
+                                    justifyContent: 'center',
+                                    gap: 12,
+                 
+                                    paddingHorizontal: 10,
+                                }}>
+                                    {lines.map((line, i) => (
+                                        <TouchableOpacity onPress={() => setTopicPopup(line.topic)} key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                            <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: line.color }} />
+                                            <Text style={{ fontSize: 11, color: colors.text }}>{line.topic}</Text>
+                                        </TouchableOpacity>
+
+                                    ))}
+                                </View>
+                            )}
+
+                            
                         </View>
 
-                        {lines.length > 0 && (
-                            <View style={{
-                                flexDirection: 'row',
-                                flexWrap: 'wrap',
-                                justifyContent: 'center',
-                                gap: 12,
-                                marginTop: 8,
-                                paddingHorizontal: 10,
-                                marginBottom: 30
-                            }}>
-                                {lines.map((line, i) => (
-                                    <TouchableOpacity onPress={() => setTopicPopup(line.topic)} key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                        <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: line.color }} />
-                                        <Text style={{ fontSize: 11, color: colors.text }}>{line.topic}</Text>
-                                    </TouchableOpacity>
-
-                                ))}
-                            </View>
-                        )}
+                        
 
 
 
