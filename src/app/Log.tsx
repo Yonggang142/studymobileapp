@@ -183,15 +183,15 @@ export default function Log() {
                         Give precise, descriptions to your stuff
                         Or match previous descriptions
                     </Text>
-                    <TagInput allTags={topic_tags ?? []} placeholder="Topic that this folder classifies under" query={selectedDescp} setQuery={setSelectedDescp} />
+                    <TagInput allTags={topic_tags ?? []} placeholder="Topic of this file" query={selectedDescp} setQuery={setSelectedDescp} />
 
-                    <TagInput allTags={allFolders ?? []} placeholder="Folder to place document under" query={selectedFolder} setQuery={setSelectedFolder} />
+                    <TagInput allTags={allFolders ?? []} placeholder="Folder of this file" query={selectedFolder} setQuery={setSelectedFolder} />
 
-                    <Button onPress={() => handleStore(selectedDescp, selectedFolder)} text={"Enter"}>
+                    <Button onPress={() => handleStore(selectedDescp, selectedFolder)} text={"Enter"} iconName="enter">
 
                     </Button>
 
-                    <Button text="Back" onPress={() => { setIsLogging(false); }}></Button>
+                    <Button text="Back" iconName="arrow-back" onPress={() => { setIsLogging(false); }}></Button>
 
 
 
@@ -201,11 +201,11 @@ export default function Log() {
                     {score && <ReviewCard data={data} />}
                     {!alreadyBucket && !alreadyAnswerBucket ? (
                         <>
-                            <Button text={"Save & go home"} onPress={() => setIsLogging(true)} disabled={isSaving} />
-                            <Button text={"Discard"} onPress={handleDone} disabled={isSaving} />
+                            <Button text={"Save & go home"} iconName="save" onPress={() => setIsLogging(true)} disabled={isSaving} />
+                            <Button text={"Discard"} iconName="close" onPress={handleDone} disabled={isSaving} />
                         </>
                     ) : (
-                        <Button text={"Go home"} onPress={() => router.push('/Index')} />
+                        <Button text={"Go home"} iconName="home" onPress={() => router.push('/Index')} />
                     )}
                 </>
             )}

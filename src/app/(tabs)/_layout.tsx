@@ -9,6 +9,8 @@ export default function TabLayout() {
             screenOptions={{
                 headerShown: false,
                 title: 'Longitude',
+                tabBarActiveTintColor: '#b15aeb',
+                tabBarInactiveTintColor: '#888888',
             }} 
         >
 

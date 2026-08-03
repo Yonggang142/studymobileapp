@@ -22,7 +22,9 @@ Output as a JSON object:
       "explanation": "..."
     }
   ]
-}`,
+}
+
+IMPORTANT: Randomly shuffle the options of each question so the correct answer appears at a random index (0-3). Set the "answer" field to the correct index AFTER shuffling; do not default it to 0.`,
 
     mcq: `Based on the content in this image, generate a multiple-choice quiz.
 
@@ -39,7 +41,9 @@ Output as a JSON object:
   ]
 }
 
-Generate 5 questions. Cover key concepts, similar in vibe to the file provided, not trivia. Each question should have multiple options.`,
+Generate 5 questions. Cover key concepts, similar in vibe to the file provided, not trivia. Each question should have multiple options.
+
+IMPORTANT: Randomly shuffle the options of each question so the correct answer appears at a random index (0-3). Set the "answer" field to the correct index AFTER shuffling; do not default it to 0.`,
 
     knowledge: `Summarize the key knowledge points from this content. 
 

@@ -85,6 +85,13 @@ export default function Materials() {
         data ? [...new Set(data.map(item => item.folder))] : []
     , [data])
 
+    const formatDate = (iso: string) => {
+        const d = new Date(iso)
+        const date = d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' })
+        const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+        return `${date} | ${time}`
+    }
+
    
     async function deleteFile(materialId: string, filePath: string) {
         
@@ -150,9 +157,9 @@ export default function Materials() {
                         Are u sure u wannt deleted
                     </Text>
 
-                    <Button text="yessir" onPress={() => {deleteFile(showMoreInfo.material_id, showMoreInfo.file_path); setWarningPopup(false); setShowMoreInfo(null)}}/>
+                    <Button text="yessir" iconName="checkmark" onPress={() => {deleteFile(showMoreInfo.material_id, showMoreInfo.file_path); setWarningPopup(false); setShowMoreInfo(null)}}/>
 
-                     <Button text="no thx" onPress={() => setWarningPopup(false)}/>
+                     <Button text="no thx" iconName="close" onPress={() => setWarningPopup(false)}/>
 
                 </View>
 
@@ -165,7 +172,10 @@ export default function Materials() {
             )}
 
             {showMoreInfo ? (
-                <View>
+                <View style={{
+                    flex: 1,
+                    margin: 20
+                }}>
 
 
 
@@ -176,24 +186,51 @@ export default function Materials() {
                     
                    <View style={{
                         flexDirection: 'row',
-
+                        justifyContent: 'center',
+                        gap: 10,
+                        marginBottom: 10,
+                        marginTop: 20
                    }}>
-                      <TouchableOpacity onPress={(e) => {e.stopPropagation(); downloadFile(showMoreInfo.file_path, showMoreInfo.material_name)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
-                        <Ionicons name="download" size={30}/>
+                      <TouchableOpacity style={[{
+                        backgroundColor: '#c14df2',
+                        width: 60,
+                        height: 60,
+                        borderRadius: 30,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }, isLoading && { opacity: 0.4 }]}
+                      onPress={(e) => {e.stopPropagation(); downloadFile(showMoreInfo.file_path, showMoreInfo.material_name)}} disabled={isLoading}>
+                        <Ionicons color={"#ffffff"} name="download" size={30}/>
                         </TouchableOpacity>
 
 
-                        <TouchableOpacity onPress={(e) => {e.stopPropagation(); setWarningPopup(true)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
-                            <Ionicons name="trash" size={30}/>
+                        <TouchableOpacity style={[{
+                            backgroundColor: '#c14df2',
+                            width: 60,
+                            height: 60,
+                            borderRadius: 30,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }, isLoading && { opacity: 0.4 }]}
+                        onPress={(e) => {e.stopPropagation(); setWarningPopup(true)}} disabled={isLoading}>
+                            <Ionicons color={"#ffffff"} name="trash" size={30}/>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={(e) => {e.stopPropagation(); setSelectedMaterial(showMoreInfo.material_id)}} disabled={isLoading} style={isLoading && { opacity: 0.4 }}>
-                            <Ionicons name="move" size={30}/>
+                        <TouchableOpacity style={[{
+                            backgroundColor: '#c14df2',
+                            width: 60,
+                            height: 60,
+                            borderRadius: 30,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }, isLoading && { opacity: 0.4 }]}
+                        onPress={(e) => {e.stopPropagation(); setSelectedMaterial(showMoreInfo.material_id)}} disabled={isLoading}>
+                            <Ionicons color={"#ffffff"} name="move" size={30}/>
                         </TouchableOpacity>
                     </View> 
                   
 
-                    <Button text="back" onPress={() => setShowMoreInfo(null)}/>
+                    <Button text="back" iconName="arrow-back" onPress={() => setShowMoreInfo(null)}/>
                    
 
 
@@ -215,37 +252,116 @@ export default function Materials() {
                 </View>
 
             ) : (
-                <View style={{ flex: 1 }}>
-                    <ScrollView style={{ flex: 1, marginTop: 80, marginHorizontal: 30}} contentContainerStyle={{ flexGrow: 1 }}>
+                <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 20}}>
+
+                    <Text style={{
+                        fontSize: 30,
+                        fontWeight: "bold",
+
+                    }}>
+                        Folder
+                    </Text>
+                    <ScrollView style={{ 
+                        flex: 1, 
+                        marginTop: 20,
+                        borderRadius: 20,
+                        backgroundColor: "#ffffff",
+                        paddingTop: 10
+                    }} contentContainerStyle={{ flexGrow: 1 }}>
                         
                         {folderNames.length ? (folderNames.map((item: string) => (
-                            <TouchableOpacity key={item} onPress={() => setFolderPopup(folderPopup === item ? "" : item)}>
-                                <Text>
+                            <TouchableOpacity style={{
+                                backgroundColor: '#ffffff',
+                                flexDirection: 'column',
+                                
+                                padding: 7,
+                                marginHorizontal: 10
+                               
+
+                            }}
+                            key={item} onPress={() => setFolderPopup(folderPopup === item ? "" : item)}>
+                                
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: "center",
+                            }}>
+                                <Ionicons name='folder' size={30} color={"#c32bff"} />
+
+                                <Text style={{
+                                    paddingLeft: 20,
+                                    fontSize: 17,
+                                    fontWeight: 'semibold'
+                                }}>
                                     {item}
                                 </Text>
+                            </View>
+                            
 
                                 {folderPopup != "" && data && item == folderPopup && data.filter((item) => item.folder == folderPopup).map((item) => (
-                            <TouchableOpacity style={{marginLeft: 20}} key={item.material_id} onPress={() => setShowMoreInfo(item)}>
+                                    <TouchableOpacity style={{marginLeft: 20, marginVertical: 10}} key={item.material_id} onPress={() => setShowMoreInfo(item)}>
                     
 
+                                        <View style={{
+                                            flexDirection: 'row',
+                                           
+                                            alignItems: 'center'
+                                        }}>
+                                            <Ionicons name="document" size={25} color={"#c333e7"} />
 
-                                <Text>
-                                    Material name: {item.material_name}
-                                </Text>
+                                            <Text style={{
+                                                fontSize: 15,
+                                                marginLeft: 10
+                                                
+                                            }}>
+                                                {item.material_name}
+                                            </Text>
+                                        </View>
+                                        
+
+                                        <View style={{
+                                            flexDirection: 'row',
+                                           
+                                            alignItems: 'center'
+                                        }}>
+                                            <Text style={{
+                                                fontSize: 17,
+                                                fontWeight: 'semibold'
+                                            }}>
+                                                {"Created at: "}
+                                            </Text>
+
+                                            <Text style={{
+                                                fontSize: 15,
+                                                color: '#aa18e0'
+                                            }}>
+                                                {formatDate(item.created_at)}
+                                            </Text>
+                                        </View>
 
 
-                                <Text>
-                                    Created at: {item.created_at}
-                                </Text>
+                                         <View style={{
+                                            flexDirection: 'row',
+                                           
+                                            alignItems: 'center'
+                                        }}>
+                                            <Text style={{
+                                                fontSize: 17,
+                                                fontWeight: 'semibold'
+                                            }}>
+                                                {"Topic: "}
+                                            </Text>
 
+                                            <Text style={{
+                                                fontSize: 15,
+                                                color: '#aa18e0'
+                                            }}>
+                                                {item.topic}
+                                            </Text>
+                                        </View>
 
-                                <Text>
-                                    Topic: {item.topic}
-                                </Text>
+                                    </TouchableOpacity>
 
-                            </TouchableOpacity>
-
-                        ))}
+                                ))}
                             </TouchableOpacity>
                         ))): (
                             <View style={{
@@ -269,7 +385,7 @@ export default function Materials() {
 
 
                     <View style={{ paddingBottom: 30, paddingTop: 20}}>
-                        <Button text="Add material" onPress={() => { 
+                        <Button text="Add material" iconName="add" onPress={() => { 
                             router.push({
                                 pathname: '/AddMaterials',
 

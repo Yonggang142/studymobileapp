@@ -132,13 +132,28 @@ export default function ResultsPage() {
                 </View>
             )}
             {type === 'mcq' || type === "mcq-revision" ? (
-                <ScrollView style={{ flex: 1 }}>
+                <ScrollView style={{ 
+                    flex: 1, 
+                    marginTop: 30
+                }}>
                     {(Array.isArray(data) ? data : data?.questions || []).map((question: MCQ, index: number) => (
-                        <View key={index} style={{ padding: 16, borderBottomWidth: 1 }}>
+                        <View key={index} style={{ 
+                            padding: 16, 
+                            borderColor: '#7a00c0',
+                            borderBottomWidth: 2, 
+                            backgroundColor: '#ffffff',
+                            borderRadius: 10,
+                            marginHorizontal: 15,
+                            marginVertical: 10
+                            }}>
+
+
+                     
                             <Text style={{
                                 fontSize: 20,
-                                marginBottom: 20
-                            }}>{question.question}</Text>
+                                marginBottom: 20,
+                                fontWeight: 'semibold'
+                            }}>{index + 1}. {question.question}</Text>
 
                             <View style={{
                                 flexDirection: "column",
@@ -146,17 +161,37 @@ export default function ResultsPage() {
                             }}>
                                 {question.options.map((option: string, opIndex: number) => (
                                     <View key={opIndex}>
-                                        {(yourResponse[index] && yourResponse[index] == opIndex) ? (
-                                            <Text style={{
-                                                color: `${rightOrWrong[index] ? '#4de136' : '#b21f1f'}`
+                                        {(yourResponse[index] != null && yourResponse[index] == opIndex) ? (
+                                            <View style={{
+                                                flexDirection:'row'
                                             }}>
-                                                {option}
-                                            </Text>
-                                        ) : (
-                                            <TouchableOpacity key={opIndex} onPress={() => CheckAnswer(question, index, opIndex)}>
-                                                <Text style={{ color: '#010101' }}>
+                                                <Text style={{
+                                                    marginRight: 10, fontWeight: 'semibold', fontSize: 14,
+                                                    color: `${rightOrWrong[index] ? '#4de136' : '#b21f1f'}`
+                                                }}>
+                                                    {opIndex + 1}.
+                                                </Text>
+
+                                                <Text style={{fontSize: 14,
+                                                    color: `${rightOrWrong[index] ? '#4de136' : '#b21f1f'}`
+                                                }}>
                                                     {option}
                                                 </Text>
+                                            </View>
+                                            
+                                           
+                                        ) : (
+                                            <TouchableOpacity key={opIndex} onPress={() => CheckAnswer(question, index, opIndex)}>
+                                                <View style={{
+                                                flexDirection:'row'
+                                                }}>
+                                                    <Text style={{ fontSize: 14, color: '#010101', marginRight: 10, fontWeight: 'semibold'}}>
+                                                        {opIndex + 1}.
+                                                    </Text>
+                                                    <Text style={{ fontSize: 14, color: '#010101' }}>
+                                                        {option}
+                                                    </Text>
+                                                </View>
                                             </TouchableOpacity>
                                         )}
                                     </View>
@@ -166,7 +201,7 @@ export default function ResultsPage() {
 
                             {rightOrWrong[index] != null && (
                                 <Text style={{
-                                    color: rightOrWrong[index] ? '#4de136' : '#b21f1f'
+                                    marginTop: 10, color: rightOrWrong[index] ? '#4de136' : '#b21f1f'
                                 }}>
                                     {question.explanation}
                                 </Text>
@@ -262,7 +297,7 @@ export default function ResultsPage() {
             <View style={{ paddingVertical: 12, alignItems: 'center' }}>
                 {(type != "marking" && type != "answers" && type != "knowledge" && type != "knowledge-revision") ? 
                 (
-                <Button onPress={() => CompileData()} text={"log"} disabled={isCompiling}>
+                <Button onPress={() => CompileData()} text={"log"} iconName="document-text" disabled={isCompiling}>
 
                 </Button>
                 ) : (
@@ -272,7 +307,7 @@ export default function ResultsPage() {
                                 pathname: '/Log', 
                                 params: { materialName, answerFileUri, answerFileHash, fileUri, bucketPath, answerBucketPath, topic, fileHash, alreadyAnswerBucket, alreadyBucket, answerFileName, summary } 
                             
-                            })} text={"complete"}>
+                            })} text={"complete"} iconName="checkmark-circle">
                         </Button>
 
                  

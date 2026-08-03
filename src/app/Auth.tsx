@@ -229,7 +229,7 @@ export default function AuthPage() {
                         value={password}
                     />
 
-                    <Button text='Login' onPress={handleSignIn} disabled={isLoading} />
+                    <Button text='Login' iconName="log-in" onPress={handleSignIn} disabled={isLoading} />
 
                     <View style={styles.textFrame}>
                         <Text style={styles.text}>
@@ -304,7 +304,7 @@ export default function AuthPage() {
                         value={password}
                     />
 
-                    <Button text='Sign Up' onPress={handleSignUp} disabled={isLoading} />
+                    <Button text='Sign Up' iconName="person-add" onPress={handleSignUp} disabled={isLoading} />
 
                     <View style={styles.textFrame}>
                         <Text>

@@ -39,7 +39,9 @@ export default function TagInput({ allTags, query, setQuery, placeholder }: {
                     backgroundColor: '#fff',
                     zIndex: 100,
                     elevation: 5,
-                    
+                    paddingHorizontal: 3,
+                    paddingVertical: 5,
+                    borderRadius: 5
                 }}>
                     {
                         filtered.map((value: string, index: number) => (

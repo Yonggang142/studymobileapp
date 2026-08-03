@@ -1,9 +1,12 @@
-import { Text, Touchable, TouchableOpacity } from 'react-native'
+import { ScrollView, Text, Touchable, TouchableOpacity } from 'react-native'
 import { View } from 'react-native'
 import { ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useUserStore } from '@/stores/userStore'
 import { useEffect, useMemo, useState } from 'react'
+import Svg, { Circle } from 'react-native-svg'
+import CircularProgress from '@/components/CircularProgress'
+import { LinearGradient } from 'expo-linear-gradient'
 
 import { useQuery } from '@tanstack/react-query'
 import { supabaseClient } from '@/config/supabaseClient'
@@ -295,88 +298,136 @@ export default function HomeScreen() {
 
     }, [topic, data, dataMaterial])
 
- 
+
+
     //console.log(JSON.stringify(lines, null, 2))
     return (
-        <View style={{
-            flex: 1,
-            justifyContent:'center',
-            alignItems:'center'
-        }}>
-            {isGenerating && (
-                <View style={{ position: 'absolute', zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-                    <ActivityIndicator size="large" color={colors.text} />
-                </View>
-            )}
-            <View style={{
-                margin: 5,
-                padding: 20,
-                borderRadius: 10,
-                width: 370,
-                height: 130,
-                backgroundColor: colors.surface,
-                borderColor: colors.Borders,
-                borderWidth: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-                
-                gap: 16
+        <View style={{ flex: 1 }}>
+            <ScrollView contentContainerStyle={{
+                flexGrow: 1,
+                alignItems:'center',
+                flexDirection: 'column'
             }}>
+            <LinearGradient
+                colors={['#8a5cf5', '#5b3dca', '#412e9a']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                    width: '100%',
+                    height: 350,
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}>
+                <Text style={{
+                    marginTop: 40,
+                    backgroundColor: 'transparent',
+                    fontWeight: 'bold', 
+                    color: '#ffffff',
+                    fontSize: 25
 
-                <Text>
-                    Motivational quote of the day: 
+                }}>
+                    Study Report
                 </Text>
                 <Text style={{
-
-                    flexShrink: 1
+                    backgroundColor: 'transparent',
+                    fontWeight: 'semibold', 
+                    color: '#ffffff',
+                    fontSize: 18,
+                    marginBottom: 30
                 }}>
-                    An apple a day keeps the doctor away
+                    Study toggles
                 </Text>
+                <View style={{
+        
+                    
+                    backgroundColor: 'transparent',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+
+                }}> 
+            
+                <View style={{
+                    marginBottom: -70,
+                    alignItems: 'center'
+                }}>
+
+                    <CircularProgress size={250}/>
+                    <View style={{
+                        position: 'absolute',
+                        top: 40,
+                        flexDirection: 'column',
+                        alignItems: 'center',
+
+                    }}>
+                        
+                        <Text style={{
+                            backgroundColor: 'transparent',
+                            fontWeight: 'bold', 
+                            color: '#ffffff',
+                            fontSize: 50,
+                       
+                        }}>
+                            80
+                        </Text>
+                        <Text style={{
+                            backgroundColor: 'transparent',
+                            fontWeight: 'bold', 
+                            color: '#ffffff',
+                            fontSize: 15,
+                      
+                        }}>
+                            Days remaining
+                        </Text>
+                        
+                    </View>
+                </View>
             </View>
+            
+           
+            </LinearGradient>
 
             <View style={{
                 margin: 5,
-                marginBottom: 0,
+                marginTop: -40,
                 paddingVertical: 12,
                 borderRadius: 10,
-                width: 370,
+                width: 350,
                 backgroundColor: colors.surface,
-                borderColor: colors.Borders,
-                borderWidth: 1,
-                alignItems: 'center',
+                paddingLeft: 20,
                 justifyContent: 'center',
             }}>
-                <Text style={{ fontSize: 24, fontWeight: 'bold', color: statistics[1].number === -1 ? '#999' : chartColors[1 % chartColors.length] }}>
-                    {statistics[1].number === -1 ? 'N/A' : statistics[1].number}
-                </Text>
-                <Text style={{ fontSize: 11, color: colors.text, marginTop: 4 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'semibold', color: '#2b2b2b', marginTop: 4 }}>
                     {statistics[1].title}
                 </Text>
+                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#000000' }}>
+                    {statistics[1].number === -1 ? 'N/A' : statistics[1].number}
+                </Text>
+
             </View>
 
   
             <View style={{
                 margin: 5,
-                marginTop: 5,
+                marginTop: -10,
                 paddingTop: 16,
                 paddingBottom: 8,
-                borderRadius: 10,
                 width: 370,
-                backgroundColor: colors.surface,
-                borderColor: colors.Borders,
-                borderWidth: 1,
                 flexDirection: 'row',
                 flexWrap: 'wrap',
             }}>
                 {[0, 2, 3, 4].map((idx) => (
-                    <View key={idx} style={{ width: '50%', alignItems: 'center', paddingVertical: 8 }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: statistics[idx].number === -1 ? '#999' : chartColors[idx % chartColors.length] }}>
-                            {statistics[idx].number === -1 ? 'N/A' : statistics[idx].number}
-                        </Text>
-                        <Text style={{ fontSize: 10, color: colors.text, marginTop: 4, textAlign: 'center', maxWidth: 120 }}>
-                            {statistics[idx].title}
-                        </Text>
+                    <View key={idx} style={{ width: '50%', height: 120, padding: 10}}>
+                        <View style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: 10, padding: 15}}>
+                            <Text style={{ fontWeight: 'semibold', fontSize: 14, color: '#2b2b2b', marginTop: 4}}>
+                                {statistics[idx].title}
+                            </Text>                        
+                            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#000000', marginTop: 'auto'}}>
+                                {statistics[idx].number === -1 ? 'N/A' : statistics[idx].number}
+                            </Text>
+                        </View>
+
+
                     </View>
                 ))}
             </View>
@@ -386,19 +437,18 @@ export default function HomeScreen() {
                 margin: 5,
                 paddingTop: 20,
                 borderRadius: 10,
-                width: 370,
+                width: 350,
                 height: 270,
-                backgroundColor: colors.surface,
-                borderColor: colors.Borders,
-                borderWidth: 1,
    
+                backgroundColor: colors.surface,
+
             }}>
 
                 <LineChart
                     data={lines[0]?.data ?? []}
                     dataSet={lines.slice(1)}
                     
-                    width={300}
+                    width={290}
                     xAxisThickness={1}
                     xAxisColor={colors.Borders}
                     xAxisLabelTextStyle={{ color: colors.text, fontSize: 9 }}
@@ -422,6 +472,7 @@ export default function HomeScreen() {
                     gap: 12,
                     marginTop: 8,
                     paddingHorizontal: 10,
+                    marginBottom: 30
                 }}>
                     {lines.map((line, i) => (
                         <TouchableOpacity onPress={() => setTopicPopup(line.topic)} key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -436,20 +487,36 @@ export default function HomeScreen() {
 
 
 
+            </ScrollView>
+
+            {isGenerating && (
+                <View style={{ position: 'absolute', zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                    <ActivityIndicator size="large" color={colors.text} />
+                </View>
+            )}
+
             {topicPopup && (
                 <View style={{
                     position: 'absolute',
-                    backgroundColor: "#ffffff",
-                    width: 350,
-                    height: 160,
-                    padding: 20
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(255, 255, 255, 0.84)',
                 }}>
-                    <Button text='Revise MCQ' onPress={() => handleSubmit("mcq-revision")} disabled={isGenerating}></Button>
-                    <Button text='error revision (no points)' onPress={() => handleSubmit("knowledge-revision")} disabled={isGenerating}></Button>
-                    
+                    <View style={{
+                        backgroundColor: 'transparent',
+                        width: 350,
+                        height: 180,
+                        padding: 20,
+                        justifyContent: 'center',
+                        gap: 10,
+     
+                    }}>
+                        <Button text='Revise MCQ' iconName="help-circle" onPress={() => handleSubmit("mcq-revision")} disabled={isGenerating}></Button>
+                        <Button text='General review (no points)' iconName="book" onPress={() => handleSubmit("knowledge-revision")} disabled={isGenerating}></Button>
+                        <Button text='Back' iconName="arrow-back" onPress={() => setTopicPopup("")} disabled={isGenerating}></Button>
+                    </View>
                 </View>
-
-
             )}
         </View>
     )

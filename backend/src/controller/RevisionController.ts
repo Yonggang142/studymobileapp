@@ -23,7 +23,9 @@ Output as a JSON array:
   }
 ]
 
-Generate 5 questions. Focus specifically on the concepts the user struggled with. Each question should have exactly 4 options.`
+Generate 5 questions. Focus specifically on the concepts the user struggled with. Each question should have exactly 4 options.
+
+IMPORTANT: Randomly shuffle the options of each question so the correct answer appears at a random index (0-3). Set the "answer" field to the correct index AFTER shuffling; do not default it to 0.`
 
 const prompt_revision = `Based on the summary of mistakes provided, generate a revision report targeting those weak areas.
 

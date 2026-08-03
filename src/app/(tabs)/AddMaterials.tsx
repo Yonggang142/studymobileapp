@@ -504,11 +504,11 @@ export default function AddMaterial() {
 
                     <TagInput allTags={allFolders ?? []} placeholder="Folder to place document under" query={selectedFolder} setQuery={setSelectedFolder} />
 
-                    <Button onPress={() => handleSubmitLogs(selectedDescp, selectedFolder)} text={"Enter"}>
+                    <Button onPress={() => handleSubmitLogs(selectedDescp, selectedFolder)} text={"Enter"} iconName="enter">
 
                     </Button>
 
-                    <Button text="Back" onPress={() => { setIsLogging(false); setAddAnswerSheet(false); }}></Button>
+                    <Button text="Back" onPress={() => { setIsLogging(false); setAddAnswerSheet(false); }} iconName="arrow-back"></Button>
 
 
 
@@ -536,15 +536,15 @@ export default function AddMaterial() {
                                 </View>
                             )}
 
-                            <Button width={300} text="Mark this, i have no answer sheet" onPress={() => handleUpload("markingNoAnswer")} disabled={isLoading} />
+                            <Button width={300} text="Marking without answer" iconName="create" onPress={() => handleUpload("markingNoAnswer")} disabled={isLoading} />
 
-                            <Button width={300} text="Give the right answers" onPress={() => handleUpload("answers")} disabled={isLoading} />
-                            <Button width={300} text="Create a MCQ quiz" onPress={() => handleUpload("mcq")} disabled={isLoading} />
-                            <Button width={300} text="Provide key knowledge points" onPress={() => handleUpload("knowledge")} disabled={isLoading} />
-                            <Button width={300} text="Skip and Store it" onPress={() => handleLogging()} disabled={isLoading} />
+                            <Button width={300} text="Give the right answers" iconName="checkmark-done" onPress={() => handleUpload("answers")} disabled={isLoading} />
+                            <Button width={300} text="Create a MCQ quiz" iconName="help-circle" onPress={() => handleUpload("mcq")} disabled={isLoading} />
+                            <Button width={300} text="Key knowledge points" iconName="bulb" onPress={() => handleUpload("knowledge")} disabled={isLoading} />
+                            <Button width={300} text="Skip and Store it" iconName="save" onPress={() => handleLogging()} disabled={isLoading} />
 
-                            <Button width={300} text="Mark my quiz with answer sheet" onPress={() => setAddAnswerSheet(true)} disabled={isLoading} />
-                            <Button text="Back" onPress={() => { setPhotoUri(null); setFile(null) }} disabled={isLoading}></Button>
+                            <Button width={300} text="Marking with answer" iconName="document-text" onPress={() => setAddAnswerSheet(true)} disabled={isLoading} />
+                            <Button width={300} text="Back" iconName="arrow-back" onPress={() => { setPhotoUri(null); setFile(null) }} disabled={isLoading}></Button>
                         </>
 
                     ) : (
@@ -565,7 +565,7 @@ export default function AddMaterial() {
                                             <Text style={{ color: colors.text, marginTop: 8 }}>{answerfile.name}</Text>
                                         </View>
                                     )}
-                                    <Button text="Score paper" onPress={() => handleUpload("marking")} disabled={isLoading}></Button>
+                                    <Button text="Score paper" iconName="checkmark-circle" onPress={() => handleUpload("marking")} disabled={isLoading}></Button>
 
                                 </>
                                 
@@ -573,18 +573,12 @@ export default function AddMaterial() {
 
 
 
-                            <Button onPress={() => pickImage("answer")} width={200} disabled={isLoading}>
-                                <Ionicons name="add" size={25} color={"#ffffff"} />
-                                <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
-                                    New Material from Camera
-                                </Text>
+                            <Button onPress={() => pickImage("answer")} width={250} text=" From camera" disabled={isLoading} iconName="camera">
+                                
                             </Button>
 
-                            <Button onPress={() => pickFile("answer")} width={200} disabled={isLoading}>
-                                <Ionicons name="add" size={25} color={"#ffffff"} />
-                                <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
-                                    New Material from Files
-                                </Text>
+                            <Button onPress={() => pickFile("answer")} width={250} text=" From files" disabled={isLoading} iconName="document">
+                              
                             </Button>
 
                             
@@ -594,11 +588,8 @@ export default function AddMaterial() {
                                 <TagInput allTags={allMaterials ?? []} query={query} setQuery={setQuery}>
 
                                 </TagInput>
-                                <Button onPress={() => handleSubmit()} width={200} disabled={isLoading}>
-                                    <Ionicons name="add" size={25} color={"#ffffff"} />
-                                    <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
-                                        New Material from Respository
-                                    </Text>
+                                <Button onPress={() => handleSubmit()} text=" From respository" width={250} disabled={isLoading} iconName="cloud-upload">
+                                  
                                 </Button>
                                 
 
@@ -618,28 +609,24 @@ export default function AddMaterial() {
                     justifyContent: 'center',
                     gap: 16
                 }}>
-                    <Button onPress={() => pickImage("worksheet")} width={200}>
-                        <Ionicons name="add" size={25} color={"#ffffff"} />
-                        <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
-                            New Material from Camera
-                        </Text>
+                    <Button text=" From camera" iconName="camera" onPress={() => pickImage("worksheet")} width={250}>
+                      
                     </Button>
-                    <Button onPress={() => pickImage("worksheet")} width={200}>
-                        <Ionicons name="add" size={25} color={"#ffffff"} />
-                        <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
-                            New Material from Files
-                        </Text>
+                    <Button text=" From files" iconName="document" onPress={() => pickImage("worksheet")} width={250}>
+                        
                     </Button>
 
 
 
                     <View>
-                        <Button onPress={() => handleSubmit()} width={200} disabled={isLoading}>
-                            <Ionicons name="add" size={25} color={"#ffffff"} />
-                            <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
-                                New Material from Respository
-                            </Text>
+                        <Button text=" From respository" iconName="cloud-upload" onPress={() => handleSubmit()} width={250} disabled={isLoading}>
+                        
                         </Button>
+                        <View style={{
+                            height: 20
+                        }}>
+                            
+                        </View>
                         <TagInput allTags={allMaterials ?? []} query={query} setQuery={setQuery}>
 
                         </TagInput>
@@ -647,7 +634,7 @@ export default function AddMaterial() {
 
                     </View>
                     {/* 
-                    <Button onPress={testPhoto} width={200}>
+                    <Button onPress={testPhoto} width={250}>
                         <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
                             TestPhoto
                         </Text>
