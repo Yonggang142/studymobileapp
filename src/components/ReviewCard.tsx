@@ -3,6 +3,7 @@ import { View, Text } from "react-native"
 
 import Button from "./Button"
 import { Ionicons } from "@expo/vector-icons"
+import Markdown from 'react-native-markdown-display'
 
 interface ConceptNScoreNReason {
     concept: string
@@ -72,9 +73,9 @@ export default function ReviewCard({ data }: { data: Log }) {
                                     Concept: {ConceptNScoreNReason.concept}
                                 </Text>
 
-                                <Text >
-                                    Reason for score: {ConceptNScoreNReason.reason}
-                                </Text>
+                                <Markdown>
+                                    Reason for score: {ConceptNScoreNReason.reason ?? ""}
+                                </Markdown>
                             </View>
                         ))}
 
@@ -143,9 +144,9 @@ export default function ReviewCard({ data }: { data: Log }) {
 
 
 
-                                <Text>
-                                    Reason for score: {ConceptNScoreNReason.reason}
-                                </Text>
+                                <Markdown>
+                                    Reason for score: {ConceptNScoreNReason.reason ?? ""}
+                                </Markdown>
                             </View>
                         ))
 
@@ -156,12 +157,9 @@ export default function ReviewCard({ data }: { data: Log }) {
 
                     <View>
 
-                        <Text style={{
-                            fontSize: 15,
-                            fontWeight: 'semibold'
-                        }}>
-                            {data.summary}
-                        </Text>
+                        <Markdown style={{ body: { fontSize: 15, fontWeight: 'semibold' } }}>
+                            {data.summary ?? ""}
+                        </Markdown>
 
                     </View>
 

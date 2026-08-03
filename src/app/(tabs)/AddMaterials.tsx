@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router'
 import { supabaseClient } from "@/config/supabaseClient"
 import { useUserStore } from "@/stores/userStore"
-import { downloadFromBucket, uploadToBucket, getFileHash, findExistingFile } from "../../utils/bucketServices"
+import { downloadFromBucket, uploadToBucket, getFileHash, findExistingFile, persistPickedFile } from "../../utils/bucketServices"
 import { TouchableOpacity } from "react-native"
 
 import TagInput from "@/components/TagInput"
@@ -131,12 +131,12 @@ export default function AddMaterial() {
     const pickImage = async (type: string) => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
-            allowsEditing: true,
+            allowsEditing: false,
             quality: 1,
         })
 
         if (!result.canceled) {
-            const selectedUri = result.assets[0].uri;
+            const selectedUri = await persistPickedFile(result.assets[0].uri, 'image.jpg');
             type == "answer" ? setAnswerPhotoUri(selectedUri) : setPhotoUri(selectedUri)
 
         }
@@ -151,8 +151,10 @@ export default function AddMaterial() {
 
             if (!result.canceled) {
                 const selectedFile = result.assets[0];
+                const stableUri = await persistPickedFile(selectedFile.uri, selectedFile.name)
+                const stableFile = { ...selectedFile, uri: stableUri }
 
-                type == "answer" ? setAnswerFile(selectedFile) : setFile(selectedFile)
+                type == "answer" ? setAnswerFile(stableFile) : setFile(stableFile)
 
             }
         } catch (error) {
@@ -496,13 +498,18 @@ export default function AddMaterial() {
                     width: 300,
                     gap: 6,
                 }}>
-                    <Text style={globalStyles.header}>
-                        Give precise, descriptions to your stuff
-                        Or match previous descriptions
+                    <Text style={{
+                        fontSize: 25,
+                        fontWeight: 'bold',
+                        color: '#2b2929',
+                        marginBottom: 15
+                    }}>
+                        Please provide precise, descriptions for your files
                     </Text>
-                    <TagInput allTags={topic_tags ?? []} placeholder="Topic that this folder classifies under" query={selectedDescp} setQuery={setSelectedDescp} />
 
-                    <TagInput allTags={allFolders ?? []} placeholder="Folder to place document under" query={selectedFolder} setQuery={setSelectedFolder} />
+                    <TagInput allTags={topic_tags ?? []} placeholder="Topic of file" query={selectedDescp} setQuery={setSelectedDescp} />
+
+                    <TagInput allTags={allFolders ?? []} placeholder="Topic of folder" query={selectedFolder} setQuery={setSelectedFolder} />
 
                     <Button onPress={() => handleSubmitLogs(selectedDescp, selectedFolder)} text={"Enter"} iconName="enter">
 
@@ -527,10 +534,11 @@ export default function AddMaterial() {
                     {!addAnswerSheet ? (
                         <>
                             {photoUri && (
-                                <Image source={{ uri: photoUri }} style={{ width: 250, height: 250, borderRadius: 8 }} />
+                                
+                                <Image source={{ uri: photoUri }} style={{ alignSelf:'center', width: 300, height: 300, borderRadius: 8 }} />
                             )}
                             {file && (
-                                <View style={{ padding: 20, backgroundColor: colors.surface, borderRadius: 8 }}>
+                                <View style={{ alignItems:'center', alignSelf:'center', padding: 20, backgroundColor: colors.surface, borderRadius: 8 }}>
                                     <Ionicons name="document" size={48} color={colors.text} />
                                     <Text style={{ color: colors.text, marginTop: 8 }}>{file.name}</Text>
                                 </View>
@@ -549,7 +557,10 @@ export default function AddMaterial() {
 
                     ) : (
 
-                        <View>
+                        <View style={{
+                            justifyContent:'center',
+                            alignItems:'center'
+                        }}>
                             
 
 
@@ -557,15 +568,15 @@ export default function AddMaterial() {
                             {(answerPhotoUri || answerfile) && (
                                 <>
                                     {answerPhotoUri && (
-                                    <Image source={{ uri: answerPhotoUri }} style={{ width: 250, height: 250, borderRadius: 8 }} />
+                                    <Image source={{ uri: answerPhotoUri }} style={{ alignSelf:'center', width: 300, height: 300, borderRadius: 8 }} />
                                     )}
                                     {answerfile && (
-                                        <View style={{ padding: 20, backgroundColor: colors.surface, borderRadius: 8 }}>
+                                        <View style={{ alignItems:'center', justifyContent:'center', alignSelf:'center', padding: 20, backgroundColor: colors.surface, borderRadius: 8 }}>
                                             <Ionicons name="document" size={48} color={colors.text} />
                                             <Text style={{ color: colors.text, marginTop: 8 }}>{answerfile.name}</Text>
                                         </View>
                                     )}
-                                    <Button text="Score paper" iconName="checkmark-circle" onPress={() => handleUpload("marking")} disabled={isLoading}></Button>
+                                    <Button width={300} text="Score paper" iconName="checkmark-circle" onPress={() => handleUpload("marking")} disabled={isLoading}></Button>
 
                                 </>
                                 
@@ -573,11 +584,11 @@ export default function AddMaterial() {
 
 
 
-                            <Button onPress={() => pickImage("answer")} width={250} text=" From camera" disabled={isLoading} iconName="camera">
+                            <Button onPress={() => pickImage("answer")} width={300} text="From camera" disabled={isLoading} iconName="camera">
                                 
                             </Button>
 
-                            <Button onPress={() => pickFile("answer")} width={250} text=" From files" disabled={isLoading} iconName="document">
+                            <Button onPress={() => pickFile("answer")} width={300} text="From files" disabled={isLoading} iconName="document">
                               
                             </Button>
 
@@ -585,12 +596,19 @@ export default function AddMaterial() {
 
 
                             <View>
+
+                                <Button onPress={() => handleSubmit()} text=" From respository" width={300} disabled={isLoading} iconName="cloud-upload">
+                                  
+                                </Button>
+
+                                <View style={{
+                                    height: 20
+                                }}/>
+                                
                                 <TagInput allTags={allMaterials ?? []} query={query} setQuery={setQuery}>
 
                                 </TagInput>
-                                <Button onPress={() => handleSubmit()} text=" From respository" width={250} disabled={isLoading} iconName="cloud-upload">
-                                  
-                                </Button>
+
                                 
 
 
@@ -609,17 +627,17 @@ export default function AddMaterial() {
                     justifyContent: 'center',
                     gap: 16
                 }}>
-                    <Button text=" From camera" iconName="camera" onPress={() => pickImage("worksheet")} width={250}>
+                    <Button text=" From camera" iconName="camera" onPress={() => pickImage("worksheet")} width={300}>
                       
                     </Button>
-                    <Button text=" From files" iconName="document" onPress={() => pickImage("worksheet")} width={250}>
+                    <Button text=" From files" iconName="document" onPress={() => pickFile("worksheet")} width={300}>
                         
                     </Button>
 
 
 
                     <View>
-                        <Button text=" From respository" iconName="cloud-upload" onPress={() => handleSubmit()} width={250} disabled={isLoading}>
+                        <Button text=" From respository" iconName="cloud-upload" onPress={() => handleSubmit()} width={300} disabled={isLoading}>
                         
                         </Button>
                         <View style={{
@@ -634,7 +652,7 @@ export default function AddMaterial() {
 
                     </View>
                     {/* 
-                    <Button onPress={testPhoto} width={250}>
+                    <Button onPress={testPhoto} width={300}>
                         <Text style={{ color: "#ffffff", paddingLeft: 7 }}>
                             TestPhoto
                         </Text>

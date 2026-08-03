@@ -9,7 +9,7 @@ const modelClient = new OpenAI({
 });
 
 const modelName = "deepseek-v4-flash"
-const instructions = "You are an expert exam revision assistant. Output ONLY valid JSON matching the requested format exactly. No markdown, no code blocks, no extra text."
+const instructions = "You are an expert exam revision assistant. Output ONLY valid JSON matching the requested format exactly. Do not wrap the JSON in markdown code blocks or add any text outside it. Inside the JSON, format free-text string values with Markdown (bold, bullets, headings) so they render nicely on mobile. For math, use plain-text or Unicode notation (e.g. x^2, ½, √x, dy/dx, 9x²) — never LaTeX commands like \\frac{}{}, ^{}, or \\sqrt{}."
 
 const prompt = `Based on the summary of mistakes provided, generate a multiple-choice quiz targeting those weak areas.
 
@@ -25,7 +25,9 @@ Output as a JSON array:
 
 Generate 5 questions. Focus specifically on the concepts the user struggled with. Each question should have exactly 4 options.
 
-IMPORTANT: Randomly shuffle the options of each question so the correct answer appears at a random index (0-3). Set the "answer" field to the correct index AFTER shuffling; do not default it to 0.`
+IMPORTANT: Randomly shuffle the options of each question so the correct answer appears at a random index (0-3). Set the "answer" field to the correct index AFTER shuffling; do not default it to 0.
+
+Format each "explanation" with Markdown (e.g. **bold** key terms, - bullet lists).`
 
 const prompt_revision = `Based on the summary of mistakes provided, generate a revision report targeting those weak areas.
 
@@ -43,7 +45,9 @@ Output as a JSON object with a "topics" key:
   ]
 }
 
-Include 2-4 topics. Each topic should have 2-3 concise, actionable points. Focus on concepts the user struggled with.`
+Include 2-4 topics. Each topic should have 2-3 concise, actionable points. Focus on concepts the user struggled with.
+
+Format each "point" with Markdown (e.g. **bold** key terms, - bullet lists).`
 
 export const handleRevision = async (req: Request, res: Response) => {
 

@@ -23,6 +23,7 @@ import fetchTopics from '@/utils/fetchTopicData'
 
 
 import * as Crypto from "expo-crypto"
+import { Fontisto } from '@expo/vector-icons'
 
 export default function Log() {
 
@@ -179,10 +180,17 @@ export default function Log() {
                     width: 300,
                     gap: 6,
                 }}>
-                    <Text style={globalStyles.header}>
-                        Give precise, descriptions to your stuff
-                        Or match previous descriptions
+                    <Text style={{
+                        fontSize: 25,
+                        fontWeight: 'bold',
+                        color: '#2b2929',
+                        marginBottom: 15
+                    }}>
+                        Please provide precise, descriptions for your files
                     </Text>
+
+             
+                    
                     <TagInput allTags={topic_tags ?? []} placeholder="Topic of this file" query={selectedDescp} setQuery={setSelectedDescp} />
 
                     <TagInput allTags={allFolders ?? []} placeholder="Folder of this file" query={selectedFolder} setQuery={setSelectedFolder} />

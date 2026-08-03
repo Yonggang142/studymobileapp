@@ -1,4 +1,5 @@
 {
+  "search.exclude": { "**/.git": true, "**/*.diff": true, "**/*.patch": true },
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",

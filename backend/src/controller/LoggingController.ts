@@ -10,7 +10,7 @@ const modelClient = new OpenAI({
 
 
 const modelName = "deepseek-v4-flash"
-const instructions = "You are an expert exam preparation assistant. Output ONLY valid JSON. No markdown, no code blocks, no extra text."
+const instructions = "You are an expert exam preparation assistant. Output ONLY valid JSON. Do not wrap the JSON in markdown code blocks or add any text outside it. Inside the JSON, format free-text string values (reason, summary) with Markdown. For math, use plain-text or Unicode notation (e.g. x^2, ½, √x, dy/dx) — never LaTeX commands like \\frac{}{}, ^{}, or \\sqrt{}."
 
 const prompt = `Analyze the questions below. Identify the concepts the user got right and wrong, with a score from 0 (completely wrong) to 10 (perfect).
 
@@ -26,7 +26,9 @@ Output JSON:
 Rules:
 - Score 0-3: weak, 4-6: average, 7-10: strong
 - Name specific concepts (e.g. "Newton's laws" not "physics")
-- At least 1 topic, at most 5`
+- At least 1 topic, at most 5
+
+Format each "reason" and the "summary" with Markdown (e.g. **bold**, - bullet lists).`
 
 export const handleLogging = async (req: Request, res: Response) => {
     try {

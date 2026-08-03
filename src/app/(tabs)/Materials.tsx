@@ -152,14 +152,17 @@ export default function Materials() {
                     <Text style={{
                         fontSize:25,
                         color: '#ffffff',
-                        fontWeight: "bold"
+                        fontWeight: "bold",
+                        flexWrap: 'wrap',
+                        maxWidth: 300,
+                        textAlign: 'center'
                     }}>
-                        Are u sure u wannt deleted
+                        Are you sure you want to delete the file?
                     </Text>
 
-                    <Button text="yessir" iconName="checkmark" onPress={() => {deleteFile(showMoreInfo.material_id, showMoreInfo.file_path); setWarningPopup(false); setShowMoreInfo(null)}}/>
+                    <Button text="yes" iconName="checkmark" onPress={() => {deleteFile(showMoreInfo.material_id, showMoreInfo.file_path); setWarningPopup(false); setShowMoreInfo(null)}}/>
 
-                     <Button text="no thx" iconName="close" onPress={() => setWarningPopup(false)}/>
+                     <Button text="no" iconName="close" onPress={() => setWarningPopup(false)}/>
 
                 </View>
 
@@ -236,16 +239,40 @@ export default function Materials() {
 
 
                      {selectedMaterial && (
-                        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#1a1a2e' }}>
-                            <Text style={{ color: '#fff', marginBottom: 10 }}>Move to folder:</Text>
+                        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#ffffff', borderRadius: 20 }}>
+                            
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                marginBottom: 10
+                            }}>
+
+
+                                <Text style={{ color: '#b85afb', fontSize: 20, fontWeight: 'bold' }}>Move to folder</Text> 
+
+                                <TouchableOpacity style={{marginLeft: 'auto'}}onPress={() => setSelectedMaterial(null)}>
+                                    <Ionicons name='exit-outline' size={30} color={"#c32bff"} />
+
+                                </TouchableOpacity>
+                            </View>
                             {folderNames?.filter(f => f !== folderPopup).map(folder => (
-                                <TouchableOpacity key={folder} onPress={() => { moveFile(selectedMaterial, folder); setSelectedMaterial(null) }}>
-                                    <Text>{folder}</Text>
+                                <TouchableOpacity style={{
+                                    flexDirection: 'row',
+            
+                                    alignItems: 'center'
+                                }} key={folder} onPress={() => { moveFile(selectedMaterial, folder); setSelectedMaterial(null) }}>
+                                    <Ionicons name='folder' size={30} color={"#c32bff"} />
+
+                                    <Text style={{
+                                        paddingLeft: 10,
+                                        fontSize: 17,
+                                        fontWeight: 'semibold'
+                                    }}>
+                                        {folder}
+                                    </Text>
                                 </TouchableOpacity>
                             ))}
-                            <TouchableOpacity onPress={() => setSelectedMaterial(null)}>
-                                <Text style={{ color: '#ff5252', padding: 8 }}>Cancel</Text>
-                            </TouchableOpacity>
+                            
                         </View>
                     )}
 

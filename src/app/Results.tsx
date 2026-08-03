@@ -1,4 +1,5 @@
 import Button from '@/components/Button'
+import Markdown from 'react-native-markdown-display'
 import { useLocalSearchParams, VectorIcon } from 'expo-router'
 import { useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
@@ -125,7 +126,7 @@ export default function ResultsPage() {
     }
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, marginTop: 40 }}>
             {isCompiling && (
                 <View style={{ position: 'absolute', zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
                     <ActivityIndicator size="large" />
@@ -134,7 +135,6 @@ export default function ResultsPage() {
             {type === 'mcq' || type === "mcq-revision" ? (
                 <ScrollView style={{ 
                     flex: 1, 
-                    marginTop: 30
                 }}>
                     {(Array.isArray(data) ? data : data?.questions || []).map((question: MCQ, index: number) => (
                         <View key={index} style={{ 
@@ -200,11 +200,9 @@ export default function ResultsPage() {
 
 
                             {rightOrWrong[index] != null && (
-                                <Text style={{
-                                    marginTop: 10, color: rightOrWrong[index] ? '#4de136' : '#b21f1f'
-                                }}>
-                                    {question.explanation}
-                                </Text>
+                                <Markdown style={{ body: { marginTop: 10, color: rightOrWrong[index] ? '#4de136' : '#b21f1f' } }}>
+                                    {question.explanation ?? ""}
+                                </Markdown>
                             )}
 
 
@@ -215,67 +213,103 @@ export default function ResultsPage() {
 
                 </ScrollView>
             ) : (type == "knowledge" || type == "knowledge-revision") ? (
+                
                 <ScrollView style={{ flex: 1, padding: 16 }}>
                  
+                     
 
                     {(Array.isArray(data) ? data : data?.topics || []).map((knowledge: Knowledge, index: number) => (
-                        <View key={index}>
-                            <Text style={globalStyles.header}>
-                                {knowledge.title}
-                            </Text>
+                        <View style={{
+                            marginTop: 0
+                        }}
+                        key={index}>
+                            <Markdown style={{
+                                body: { fontSize: 30, color: '#924ed1', fontWeight: 'bold' },
+                                heading1: { fontSize: 30, color: '#924ed1', fontWeight: 'bold' },
+                                heading2: { fontSize: 30, color: '#924ed1', fontWeight: 'bold' },
+                            }}>
+                                {knowledge.title ?? ""}
+                            </Markdown>
 
                             {knowledge.points.map((points: string, subIdx: number) => (
-                                <Text key={subIdx}>
-                                    {points}
-                                </Text>
+                                <Markdown key={subIdx}>
+                                    {points ?? ""}
+                                </Markdown>
                             ))}
+
+                            <View style={{
+                                paddingBottom: 10,
+                                marginBottom: 10,
+                                borderBottomColor: '#ffffff',
+                                borderBottomWidth: 1
+                            }}></View>
                         </View>
                     ))}
                     
                 </ScrollView>
             ) : (type == "answers") ? (
                 <ScrollView style={{ flex: 1, padding: 16 }}>
-                    <Text style={globalStyles.header}>Answers</Text>
+                    <Text style={{
+                        fontSize: 30,
+                        fontWeight: 'bold',
+                        marginBottom: 20,
+                        color: "#b941e1"
+                    }}>Answers</Text>
                     {(Array.isArray(data) ? data : data?.questions || [data]).map((answers: Answers, index: number) => (
                         <View style={{ 
-                            gap: 5
+                            gap: 3
+
                         }} key={index}>
-                            <Text>
-                                {answers.question}
+                            <Text style={{
+                                fontSize: 20,
+                                fontWeight: 'bold',
+                                
+                            }}>
+                                Question {index + 1}
                             </Text>
 
-                            {answers.options.map((option: string, subIdx: number) => (
-                                <Text key={subIdx}>
-                                    {option}
-                                </Text>
-                            ))}
-
-                            <Text>
-                                {answers.answer}
+                            <Text style={{
+                                color: '#a91dd3'
+                            }}>
+                                The answer is: {answers.answer}
                             </Text>
 
 
-                            <Text>
-                                {answers.explanation}
-                            </Text>
+                            <Markdown>
+                                {answers.explanation ?? ""}
+                            </Markdown>
 
+                            <View style={{
+                                paddingBottom: 10,
+                                marginBottom: 10,
+                                borderBottomColor: '#ffffff',
+                                borderBottomWidth: 1
+                            }}>
+                                
+                            </View>
                         </View>
                     ))}
 
                 </ScrollView>
             ) : (type == "marking" || type == "markingNoAnswer") ? (
-                <ScrollView style={{ gap: 10, padding: 16 }}>
-                    <Text style={globalStyles.header}>
+                <ScrollView contentContainerStyle={{ padding: 16 }}>
+                    <Text style={{
+                        fontSize: 30,
+                        fontWeight: 'bold',
+                        color: '#d16dff'
+                    }}>
                         Score: {data?.results ? `${data.results.filter((r: any) => r.isCorrect).length}/${data.results.length}` : "N/A"}
                     </Text>
-                    <Text style={{ marginTop: 8 }}>{data?.feedback}</Text>
+
+                    <Markdown style={{ body: { marginTop: 8 } }}>{data?.feedback ?? ""}</Markdown>
+                    
+                    
                     {data?.results?.map((r: any, i: number) => (
                         <View key={i} style={{ marginTop: 12, padding: 10, backgroundColor: r.isCorrect ? '#e8f5e9' : '#ffebee', borderRadius: 8 }}>
-                            <Text style={{ fontWeight: 'bold' }}>Q{i + 1}: {r.question}</Text>
-                            <Text>Your answer: {r.studentAnswer}</Text>
-                            <Text>Correct: {r.correctAnswer}</Text>
-                            <Text style={{ color: r.isCorrect ? '#2e7d32' : '#c62828' }}>{r.isCorrect ? '✅ Correct' : '❌ Incorrect'}</Text>
-                            <Text>{r.explanation ?? ""}</Text>
+                            <Text style={{ fontWeight: 'bold' }}>Question {i + 1}: {r.question?.replace(/^\d+[.)]\s*/, "")}</Text>
+                            <Text>Your answer: {r.studentAnswer ?? ""}</Text>
+                       
+                            <Markdown>{r.explanation ?? ""}</Markdown>
                         </View>
                     ))}
                 </ScrollView>
@@ -284,9 +318,9 @@ export default function ResultsPage() {
                     gap: 10
                 }}>
 
-                    <Text>
-                        Summary of common mistakes: {JSON.stringify(data)}
-                    </Text>
+                    <Markdown>
+                        Summary of common mistakes: {JSON.stringify(data) ?? ""}
+                    </Markdown>
 
 
                 </ScrollView>

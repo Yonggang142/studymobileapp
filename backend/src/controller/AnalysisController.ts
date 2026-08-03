@@ -16,15 +16,15 @@ Output as a JSON object:
   "summary": "Brief 2-3 sentence summary of what this material covers",
   "questions": [
     {
-      "question": "...",
-      "options": ["...", "...", "...", "..."],
-      "answer": 0,
-      "explanation": "..."
+      "answer": "The correct answer for this question",
+      "explanation": "Why this answer is correct"
     }
   ]
 }
 
-IMPORTANT: Randomly shuffle the options of each question so the correct answer appears at a random index (0-3). Set the "answer" field to the correct index AFTER shuffling; do not default it to 0.`,
+Do NOT include the question text or the list of options — only the answer and its explanation. The "answer" field should contain the actual answer content (e.g. the correct letter and/or the value), not an index.
+
+Format the "summary" and each "explanation" with Markdown (e.g. **bold**, - bullet lists).`,
 
     mcq: `Based on the content in this image, generate a multiple-choice quiz.
 
@@ -43,7 +43,9 @@ Output as a JSON object:
 
 Generate 5 questions. Cover key concepts, similar in vibe to the file provided, not trivia. Each question should have multiple options.
 
-IMPORTANT: Randomly shuffle the options of each question so the correct answer appears at a random index (0-3). Set the "answer" field to the correct index AFTER shuffling; do not default it to 0.`,
+IMPORTANT: Randomly shuffle the options of each question so the correct answer appears at a random index (0-3). Set the "answer" field to the correct index AFTER shuffling; do not default it to 0.
+
+Format the "summary" and each "explanation" with Markdown (e.g. **bold**, - bullet lists).`,
 
     knowledge: `Summarize the key knowledge points from this content. 
 
@@ -62,7 +64,9 @@ Output as a JSON object:
   ]
 }
 
-Include 2-4 topics. Each topic should have 2-3 concise, well-explained points. Focus on concepts that would appear in an exam, not filler.`,
+Include 2-4 topics. Each topic should have 2-3 concise, well-explained points. Focus on concepts that would appear in an exam, not filler.
+
+Format each "point" with Markdown (e.g. **bold** key terms, - bullet lists).`,
 
     marking: `You are grading a student's work against an answer key.
 
@@ -86,7 +90,11 @@ Output as a JSON object:
     }
   ],
   "feedback": "Overall feedback here..."
-}`,
+}
+
+In the "results" array, the "question" field must contain only the question content — do NOT prefix it with a number like "1." (the app adds its own numbering).
+
+Format "feedback", the "summary", and each "explanation" with Markdown (e.g. **bold**, - bullet lists).`,
  markingNoAnswer: `You are grading a student's work. There is NO answer key provided — you must determine the correct answers yourself from the question content.
 
     1. For each question, figure out the correct answer.
@@ -109,11 +117,47 @@ Output as a JSON object:
         }
     ],
     "feedback": "Overall feedback here..."
-    }`
+    }
+
+    In the "results" array, the "question" field must contain only the question content — do NOT prefix it with a number like "1." (the app adds its own numbering).
+
+    Format "feedback", the "summary", and each "explanation" with Markdown (e.g. **bold**, - bullet lists).`
 }
 
-const instructions = "You are an expert exam preparation assistant. Analyze the provided image carefully. Output ONLY valid JSON matching the requested format exactly. Do not include markdown formatting, code blocks, or any text outside the JSON."
+const instructions = "You are an expert exam preparation assistant. Analyze the provided image carefully. Output ONLY valid JSON matching the requested format exactly. Do not wrap the JSON in markdown code blocks or add any text outside it. Inside the JSON, format free-text string values with Markdown (bold, bullets, headings) so they render nicely on mobile. For math, use plain-text or Unicode notation (e.g. x^2, ½, √x, dy/dx, 9x²) — never LaTeX commands like \\frac{}{}, ^{}, or \\sqrt{}."
 const modelName = "gpt-4o-mini"  // supports image_url vision
+
+// Robustly parse the model's JSON output: strips markdown code fences, extracts
+// the outermost JSON block, and repairs lone backslashes (e.g. markdown escapes
+// like \- or \* that aren't valid JSON escapes).
+const safeJsonParse = (content: string | null | undefined): any => {
+  if (!content) return {}
+  let text = content.trim()
+
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fence) text = fence[1].trim()
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    const start = text.indexOf('{')
+    const end = text.lastIndexOf('}')
+    if (start !== -1 && end > start) {
+      const candidate = text.slice(start, end + 1)
+      try {
+        return JSON.parse(candidate)
+      } catch {
+        const cleaned = candidate.replace(/\\(?!["\\/bfnrtu])/g, '\\\\')
+        try {
+          return JSON.parse(cleaned)
+        } catch {
+          return {}
+        }
+      }
+    }
+    return {}
+  }
+}
 
 const mimeFromFilename = (name: string): string | null => {
     const ext = name.split('.').pop()?.toLowerCase() ?? ''
@@ -185,7 +229,7 @@ export const handleAnalysis = async (req: Request, res: Response) => {
             ],
         })
 
-        const raw = JSON.parse(response.choices[0].message.content || '{}')
+        const raw = safeJsonParse(response.choices[0].message.content)
         res.json({
             content: JSON.stringify(raw),
             summary: raw.summary || ''
