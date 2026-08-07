@@ -2,7 +2,6 @@
 
 import { useLocalSearchParams } from 'expo-router'
 import { View, Text, ActivityIndicator } from 'react-native'
-import { globalStyles } from '@/styles/global'
 import { useRouter } from 'expo-router'
 import { use, useMemo, useState } from 'react'
 

@@ -4,8 +4,6 @@ import { useLocalSearchParams, VectorIcon } from 'expo-router'
 import { useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
-import { globalStyles } from '@/styles/global'
-import { supabaseClient } from '@/config/supabaseClient'
 import { useUserStore } from '@/stores/userStore'
 import { useMemo } from 'react'
 

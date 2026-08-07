@@ -7,7 +7,6 @@ import Button from '@/components/Button'
 import { supabaseClient } from '@/config/supabaseClient'
 import { useState } from 'react'
 
-import { Ionicons } from '@expo/vector-icons'
 import { Provider } from '@supabase/supabase-js';
 
 const CompanyLogo = require('../assets/CompanyLogo.png')
